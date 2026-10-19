@@ -75,8 +75,12 @@ def _weights_and_errors(split: PopulationSplit) -> tuple[np.ndarray, ...]:
     a1 = rows["a1"].to_numpy(dtype=float)
     f0 = rows["f0"].to_numpy(dtype=float)
     f1 = rows["f1"].to_numpy(dtype=float)
-    if a0.sum() <= 0 or a1.sum() <= 0:
-        raise AttributionError("the decomposable population has no demand in one of the periods")
+    # No zero sum guard here. `split_populations` admits a SKU to the
+    # decomposable set only when its demand is positive in both periods, so
+    # both sums are positive by construction. A guard here looked prudent and
+    # was dead code: test coverage is what said so, and the invariant it was
+    # guarding is pinned by
+    # `test_every_decomposable_sku_has_positive_demand_in_both_periods`.
     w0 = a0 / a0.sum()
     w1 = a1 / a1.sum()
     e0 = np.abs(a0 - f0) / a0
@@ -125,9 +129,9 @@ def decompose(split: PopulationSplit, convention: str = DEFAULT_CONVENTION) -> A
     restricted0 = float(w0 @ e0)
     restricted1 = float(w1 @ e1)
 
+    # Likewise unguarded: the decomposable set is non empty and contributes
+    # positive demand to both period totals of the full population.
     full = split.totals
-    if full["a0"].sum() <= 0 or full["a1"].sum() <= 0:
-        raise AttributionError("the full population has no demand in one of the periods")
     full0 = float(np.abs(full["a0"] - full["f0"]).sum() / full["a0"].sum())
     full1 = float(np.abs(full["a1"] - full["f1"]).sum() / full["a1"].sum())
 

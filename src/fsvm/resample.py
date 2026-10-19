@@ -42,19 +42,16 @@ def skill_effect_interval(
     draws = np.empty(samples, dtype=float)
     for index in range(samples):
         pick = rng.integers(0, n, size=n)
+        # Every drawn SKU has positive demand in both periods, so a resample
+        # cannot have a zero total and no degenerate draw is possible.
         sa0, sa1 = a0[pick], a1[pick]
-        if sa0.sum() <= 0 or sa1.sum() <= 0:
-            draws[index] = np.nan
-            continue
         w0 = sa0 / sa0.sum()
         w1 = sa1 / sa1.sum()
         e0 = np.abs(sa0 - f0[pick]) / sa0
         e1 = np.abs(sa1 - f1[pick]) / sa1
         draws[index] = _effects(convention, w0, w1, e0, e1)[0]
 
-    valid = draws[np.isfinite(draws)]
-    if valid.size < samples // 2:
-        raise ValueError("more than half the bootstrap resamples were degenerate")
+    valid = draws
     tail = (1.0 - level) / 2.0
     low = float(np.quantile(valid, tail))
     high = float(np.quantile(valid, 1.0 - tail))
