@@ -4,6 +4,13 @@ A decomposition can report that per SKU errors fell and still be describing a
 period that was simply easier to forecast. The only defence is a third forecast
 that nobody tuned: last season's actual, carried forward. Where the model fails
 to beat that, the word "model" is doing no work.
+
+The referee is aligned on week numbers, not on row positions. That distinction
+is not pedantic. An ERP sales extract usually omits weeks with no sales, so the
+rows for a slow moving SKU are not contiguous, and a positional shift of 52 rows
+reaches back an arbitrary number of weeks. See ADR-004 and the war story in the
+README: on this repository's own fixture, the positional version moved the
+unweighted beat rate by 17.7 points.
 """
 
 from __future__ import annotations
@@ -15,22 +22,51 @@ from fsvm.errors import AttributionError
 from fsvm.metrics import mase
 
 DEFAULT_SEASON_WEEKS = 52
+MIN_SCORED_WEEKS = 4
 
 
-def seasonal_naive(series: np.ndarray, season: int = DEFAULT_SEASON_WEEKS) -> np.ndarray:
-    """Carry the value from `season` periods earlier forward.
+def seasonal_naive(weeks, values, season: int = DEFAULT_SEASON_WEEKS) -> np.ndarray:
+    """Return, for each week, the actual from `season` weeks earlier.
 
-    The first `season` entries have no predecessor and are returned as NaN
-    rather than back filled. Back filling would invent a referee that saw the
-    future, which is exactly the error this module exists to catch.
+    Weeks with no predecessor in the series are NaN rather than back filled.
+    Back filling would invent a referee that saw the future, which is exactly
+    the error this module exists to catch.
     """
-    values = np.asarray(series, dtype=float)
     if season < 1:
         raise AttributionError(f"season must be at least 1, got {season}")
-    out = np.full(values.shape, np.nan, dtype=float)
-    if values.size > season:
-        out[season:] = values[:-season]
-    return out
+    week_array = np.asarray(weeks, dtype=int)
+    value_array = np.asarray(values, dtype=float)
+    if week_array.shape != value_array.shape:
+        raise AttributionError(
+            f"weeks and values differ in length: {week_array.size} and {value_array.size}"
+        )
+    lookup = dict(zip(week_array.tolist(), value_array.tolist(), strict=True))
+    return np.array([lookup.get(int(week) - season, np.nan) for week in week_array], dtype=float)
+
+
+def densify(frame: pd.DataFrame, fill_value: float = 0.0) -> pd.DataFrame:
+    """Insert a zero demand row for every week a SKU is missing inside its own span.
+
+    A missing week in a sales extract means no sales, not no information. That
+    reading is an assumption about the upstream system rather than a fact about
+    the data, so it is applied in one named function and recorded in ADR-004,
+    not scattered through the scoring code.
+
+    Only weeks inside each SKU's own first to last observed span are filled.
+    Padding a launch backwards to the start of the panel would invent history.
+    The inserted rows carry a `filled` flag so scoring can refuse to grade a
+    forecast that was never actually made.
+    """
+    pieces = []
+    for sku, rows in frame.groupby("sku", sort=True):
+        span = np.arange(int(rows["week"].min()), int(rows["week"].max()) + 1)
+        reindexed = (
+            rows.set_index("week").reindex(span).rename_axis("week").reset_index().assign(sku=sku)
+        )
+        reindexed["filled"] = reindexed["actual"].isna()
+        reindexed["actual"] = reindexed["actual"].fillna(fill_value)
+        pieces.append(reindexed)
+    return pd.concat(pieces, ignore_index=True)
 
 
 def beat_rate(
@@ -40,25 +76,36 @@ def beat_rate(
 
     Returns both an unweighted rate over SKUs and a volume weighted rate,
     because they answer different questions and routinely disagree. A model can
-    beat the referee on most SKUs and lose on most of the volume, which is the
-    case a portfolio metric hides most effectively.
+    lose to the referee on most SKUs and still win on most of the volume, which
+    is the case a portfolio metric hides most effectively.
+
+    Weeks inserted by `densify` inform the referee but are never scored, so a
+    forecast is only graded where one was actually recorded.
     """
+    dense = densify(frame)
     results: list[tuple[str, float, float]] = []
     undefined = 0
-    for sku, rows in frame.sort_values("week").groupby("sku", sort=True):
+
+    for sku, rows in dense.sort_values("week").groupby("sku", sort=True):
+        weeks = rows["week"].to_numpy(dtype=int)
         actual = rows["actual"].to_numpy(dtype=float)
         forecast = rows["forecast"].to_numpy(dtype=float)
-        naive = seasonal_naive(actual, season)
-        evaluate = (rows["week"].to_numpy() >= split_week) & np.isfinite(naive)
-        if evaluate.sum() < 4:
+        naive = seasonal_naive(weeks, actual, season)
+        scorable = (
+            (weeks >= split_week)
+            & np.isfinite(naive)
+            & np.isfinite(forecast)
+            & ~rows["filled"].to_numpy(dtype=bool)
+        )
+        if scorable.sum() < MIN_SCORED_WEEKS:
             undefined += 1
             continue
         try:
-            score = mase(actual[evaluate], forecast[evaluate], naive[evaluate])
+            score = mase(actual[scorable], forecast[scorable], naive[scorable])
         except ValueError:
             undefined += 1
             continue
-        results.append((str(sku), score, float(actual[evaluate].sum())))
+        results.append((str(sku), score, float(actual[scorable].sum())))
 
     if not results:
         raise AttributionError(
