@@ -1,0 +1,56 @@
+{
+  "note": "the residual is fixture rounding, not method error: demand is stored to three decimals so it round trips through CSV byte for byte",
+  "per_case": {
+    "pure_mix.laspeyres": {
+      "measured_residual": 1.7592102312716166e-08,
+      "planted_zero_field": "skill_effect",
+      "ratio_to_delta": 1.0970530053342461e-06,
+      "restricted_delta": -0.016035781523023374
+    },
+    "pure_mix.paasche": {
+      "measured_residual": 2.2459359359406894e-08,
+      "planted_zero_field": "skill_effect",
+      "ratio_to_delta": 1.4005777845726365e-06,
+      "restricted_delta": -0.016035781523023374
+    },
+    "pure_mix.shapley": {
+      "measured_residual": 2.0025730836061528e-08,
+      "planted_zero_field": "skill_effect",
+      "ratio_to_delta": 1.2488153949534412e-06,
+      "restricted_delta": -0.016035781523023374
+    },
+    "pure_mix.three_term": {
+      "measured_residual": 1.7592102312716166e-08,
+      "planted_zero_field": "skill_effect",
+      "ratio_to_delta": 1.0970530053342461e-06,
+      "restricted_delta": -0.016035781523023374
+    },
+    "pure_skill.laspeyres": {
+      "measured_residual": 1.0492706470259384e-08,
+      "planted_zero_field": "mix_effect",
+      "ratio_to_delta": 1.950393942376106e-06,
+      "restricted_delta": -0.005379788278811221
+    },
+    "pure_skill.paasche": {
+      "measured_residual": 8.29399615658401e-09,
+      "planted_zero_field": "mix_effect",
+      "ratio_to_delta": 1.5416956442785414e-06,
+      "restricted_delta": -0.005379788278811221
+    },
+    "pure_skill.shapley": {
+      "measured_residual": 9.393351313421697e-09,
+      "planted_zero_field": "mix_effect",
+      "ratio_to_delta": 1.7460447933273239e-06,
+      "restricted_delta": -0.005379788278811221
+    },
+    "pure_skill.three_term": {
+      "measured_residual": 8.29399615658401e-09,
+      "planted_zero_field": "mix_effect",
+      "ratio_to_delta": 1.5416956442785414e-06,
+      "restricted_delta": -0.005379788278811221
+    }
+  },
+  "question": "does the decomposition return zero where zero is the planted truth",
+  "worst_residual": 2.2459359359406894e-08,
+  "worst_residual_ratio": 1.950393942376106e-06
+}

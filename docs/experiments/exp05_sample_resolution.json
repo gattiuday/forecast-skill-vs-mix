@@ -1,0 +1,42 @@
+{
+  "bootstrap_samples": 400,
+  "detection_rate_at_20_skus": 0.18,
+  "full_population_skill_effect_points": -1.1638044936344512,
+  "note": "a category smaller than the smallest adequate size cannot support a skill claim at this effect size, whatever the point estimate reads",
+  "question": "how many SKUs are needed before a skill effect is distinguishable",
+  "series": [
+    {
+      "detection_rate": 0.18,
+      "median_ci_width_points": 4.139032248360172,
+      "n_skus": 20
+    },
+    {
+      "detection_rate": 0.38666666666666666,
+      "median_ci_width_points": 3.009385205799745,
+      "n_skus": 40
+    },
+    {
+      "detection_rate": 0.5066666666666667,
+      "median_ci_width_points": 2.1559449322856654,
+      "n_skus": 80
+    },
+    {
+      "detection_rate": 0.7066666666666667,
+      "median_ci_width_points": 1.7776200961277462,
+      "n_skus": 120
+    },
+    {
+      "detection_rate": 0.9533333333333334,
+      "median_ci_width_points": 1.52630349007899,
+      "n_skus": 160
+    },
+    {
+      "detection_rate": 1.0,
+      "median_ci_width_points": 1.400261976743944,
+      "n_skus": 199
+    }
+  ],
+  "smallest_adequate_n": 160,
+  "target_detection_rate": 0.8,
+  "trials_per_size": 150
+}

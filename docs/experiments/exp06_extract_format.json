@@ -1,0 +1,38 @@
+{
+  "artifact_removed_points": 14.10925595720538,
+  "measurements": {
+    "positional_dense": {
+      "beat_rate_unweighted": 0.4597156398104265,
+      "beat_rate_volume_weighted": 0.7432970493756813,
+      "median_mase": 1.185332109590685,
+      "n_scored": 211
+    },
+    "positional_sparse": {
+      "beat_rate_unweighted": 0.2709677419354839,
+      "beat_rate_volume_weighted": 0.7355646534226274,
+      "median_mase": 1.3900388944343098,
+      "n_scored": 155
+    },
+    "week_aligned_dense": {
+      "beat_rate_unweighted": 0.4597156398104265,
+      "beat_rate_volume_weighted": 0.7432970493756813,
+      "median_mase": 1.185332109590685,
+      "n_scored": 211,
+      "n_undefined": 29,
+      "season_weeks": 52
+    },
+    "week_aligned_sparse": {
+      "beat_rate_unweighted": 0.4120603015075377,
+      "beat_rate_volume_weighted": 0.7362160152013074,
+      "median_mase": 1.2303896162638832,
+      "n_scored": 199,
+      "n_undefined": 41,
+      "season_weeks": 52
+    }
+  },
+  "note": "the residual gap under week alignment is genuine information loss: a sparse extract has fewer weeks carrying a recorded forecast to grade, so fewer SKUs clear the minimum scored week count",
+  "positional_gap_points": 18.87478978749426,
+  "question": "how much does the referee depend on the extract including zero sales weeks",
+  "rows_dropped": 3749,
+  "week_aligned_gap_points": 4.765533830288882
+}

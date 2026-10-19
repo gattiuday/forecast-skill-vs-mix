@@ -1,0 +1,85 @@
+{
+  "max_unattributable_share": 0.5007442874682019,
+  "max_unattributable_share_at_churn": 0.4,
+  "note": "the zero churn case still has an unattributable share, because SKUs that go dormant for a whole period are present in both periods and still have no defined percentage error",
+  "question": "how much of a WMAPE change becomes unattributable as churn rises",
+  "series": [
+    {
+      "churn_share_requested": 0.0,
+      "n_decomposable": 228,
+      "n_entrants": 0,
+      "n_exits": 0,
+      "n_zero_actual": 12,
+      "total_delta": -0.030263123737204273,
+      "unattributable_delta": -0.004184052494325574,
+      "unattributable_share_of_change": 0.13825580368565416,
+      "unattributable_volume_share": 0.019617425283476875
+    },
+    {
+      "churn_share_requested": 0.05,
+      "n_decomposable": 216,
+      "n_entrants": 6,
+      "n_exits": 6,
+      "n_zero_actual": 12,
+      "total_delta": -0.0323480037221516,
+      "unattributable_delta": -0.005984354287382643,
+      "unattributable_share_of_change": 0.18499918383787667,
+      "unattributable_volume_share": 0.03819278301341289
+    },
+    {
+      "churn_share_requested": 0.12,
+      "n_decomposable": 199,
+      "n_entrants": 14,
+      "n_exits": 15,
+      "n_zero_actual": 12,
+      "total_delta": -0.028646102885297633,
+      "unattributable_delta": -0.0031892970139143217,
+      "unattributable_share_of_change": 0.11133441175871783,
+      "unattributable_volume_share": 0.06396689551744694
+    },
+    {
+      "churn_share_requested": 0.2,
+      "n_decomposable": 180,
+      "n_entrants": 24,
+      "n_exits": 24,
+      "n_zero_actual": 12,
+      "total_delta": -0.028952807026201413,
+      "unattributable_delta": -0.0033523935928924664,
+      "unattributable_share_of_change": 0.11578820629925975,
+      "unattributable_volume_share": 0.10490614174367952
+    },
+    {
+      "churn_share_requested": 0.3,
+      "n_decomposable": 156,
+      "n_entrants": 36,
+      "n_exits": 36,
+      "n_zero_actual": 12,
+      "total_delta": -0.019698181153058172,
+      "unattributable_delta": 0.007077121645064827,
+      "unattributable_share_of_change": 0.3592779247014942,
+      "unattributable_volume_share": 0.21341202267204407
+    },
+    {
+      "churn_share_requested": 0.4,
+      "n_decomposable": 132,
+      "n_entrants": 48,
+      "n_exits": 48,
+      "n_zero_actual": 12,
+      "total_delta": -0.017906708630040444,
+      "unattributable_delta": 0.008966682053850303,
+      "unattributable_share_of_change": 0.5007442874682019,
+      "unattributable_volume_share": 0.28496710231654176
+    },
+    {
+      "churn_share_requested": 0.48,
+      "n_decomposable": 113,
+      "n_entrants": 57,
+      "n_exits": 58,
+      "n_zero_actual": 12,
+      "total_delta": -0.02192952030182274,
+      "unattributable_delta": 0.0047575128139995815,
+      "unattributable_share_of_change": 0.21694559427294657,
+      "unattributable_volume_share": 0.3422266343242448
+    }
+  ]
+}

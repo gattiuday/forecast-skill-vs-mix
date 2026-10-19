@@ -1,0 +1,26 @@
+{
+  "beat_rate_unweighted_pct": 45.97156398104265,
+  "beat_rate_weighted_pct": 74.32970493756812,
+  "counting_gap_points": 28.358140956525478,
+  "loses_unweighted_pct": 54.02843601895735,
+  "note": "the fixture's forecast is constructed, so the absolute level of these rates is a property of the generator. The gap between the two ways of counting is the finding, not the level.",
+  "per_season": {
+    "26": {
+      "beat_rate_unweighted": 0.6488888888888888,
+      "beat_rate_volume_weighted": 0.9313339041921005,
+      "median_mase": 0.6045764536858802,
+      "n_scored": 225,
+      "n_undefined": 15,
+      "season_weeks": 26
+    },
+    "52": {
+      "beat_rate_unweighted": 0.4597156398104265,
+      "beat_rate_volume_weighted": 0.7432970493756813,
+      "median_mase": 1.185332109590685,
+      "n_scored": 211,
+      "n_undefined": 29,
+      "season_weeks": 52
+    }
+  },
+  "question": "does the forecast beat a seasonal naive referee, and on what count"
+}

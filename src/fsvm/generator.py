@@ -104,11 +104,12 @@ def generate_panel(
     # periods, zero demand in one, so a per SKU percentage error has no
     # denominator. Real catalogues are full of these and they are the
     # population most often silently dropped.
-    dormant = (
-        set(range(n_churn, n_churn + max(1, round(0.05 * n_skus))))
-        if scenario == "realistic"
-        else set()
-    )
+    # Taken from the top of the id range so that the dormant set does not move
+    # when churn_share changes. Without that, raising churn also swaps which
+    # SKUs go dormant, and the churn sweep in exp03 compares different panels
+    # at every level instead of nested ones.
+    n_dormant = max(1, round(0.05 * n_skus)) if scenario == "realistic" else 0
+    dormant = set(range(n_skus - n_dormant, n_skus))
 
     frames = []
     for sku_id, archetype in enumerate(archetypes):
