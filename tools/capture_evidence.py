@@ -18,10 +18,30 @@ IMG_DIR = ROOT / "docs" / "img"
 MANIFEST = ROOT / "docs" / "evidence-manifest.json"
 
 COMMANDS = (
-    ("attribute", [sys.executable, "-m", "fsvm.cli", "attribute",
-                   "--panel", "data/fixtures/panel-realistic.csv", "--bootstrap", "2000"]),
-    ("referee", [sys.executable, "-m", "fsvm.cli", "referee",
-                 "--panel", "data/fixtures/panel-realistic.csv"]),
+    (
+        "attribute",
+        [
+            sys.executable,
+            "-m",
+            "fsvm.cli",
+            "attribute",
+            "--panel",
+            "data/fixtures/panel-realistic.csv",
+            "--bootstrap",
+            "2000",
+        ],
+    ),
+    (
+        "referee",
+        [
+            sys.executable,
+            "-m",
+            "fsvm.cli",
+            "referee",
+            "--panel",
+            "data/fixtures/panel-realistic.csv",
+        ],
+    ),
 )
 
 CHAR_W, LINE_H, PAD, TITLE_H = 8.0, 18, 18, 34
@@ -29,8 +49,11 @@ BG, FG, ACCENT, DIM = "#1b1f27", "#e6edf3", "#ffd479", "#7d8590"
 
 
 def run(command: list[str]) -> tuple[str, int, float]:
-    env = {"PYTHONPATH": str(ROOT / "src"), "PATH": "/usr/bin:/bin:/usr/local/bin",
-           "COLUMNS": "100"}
+    env = {
+        "PYTHONPATH": str(ROOT / "src"),
+        "PATH": "/usr/bin:/bin:/usr/local/bin",
+        "COLUMNS": "100",
+    }
     started = time.monotonic()
     result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, env=env)
     return result.stdout + result.stderr, result.returncode, time.monotonic() - started
@@ -38,8 +61,7 @@ def run(command: list[str]) -> tuple[str, int, float]:
 
 def escape(text: str) -> str:
     return (
-        text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        .replace('"', "&quot;")
+        text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
     )
 
 
@@ -72,7 +94,7 @@ def main() -> int:
     entries = []
     for name, command in COMMANDS:
         output, code, elapsed = run(command)
-        printable = " ".join(["python", "-m"] + command[2:])
+        printable = " ".join(["python", "-m", *command[2:]])
         target = IMG_DIR / f"console-{name}.svg"
         target.write_text(to_svg(printable, output, code))
         entries.append(

@@ -4,7 +4,7 @@
       "name": "attribute",
       "command": "python -m fsvm.cli attribute --panel data/fixtures/panel-realistic.csv --bootstrap 2000",
       "exit_code": 0,
-      "wall_seconds": 0.57,
+      "wall_seconds": 0.59,
       "output_lines": 21,
       "svg": "docs/img/console-attribute.svg"
     },
@@ -12,7 +12,7 @@
       "name": "referee",
       "command": "python -m fsvm.cli referee --panel data/fixtures/panel-realistic.csv",
       "exit_code": 0,
-      "wall_seconds": 1.02,
+      "wall_seconds": 0.98,
       "output_lines": 5,
       "svg": "docs/img/console-referee.svg"
     }
