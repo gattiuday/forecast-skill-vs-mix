@@ -35,18 +35,61 @@ METRICS_PATH = ROOT / "docs" / "metrics.json"
 FENCE = re.compile(r"```.*?```", re.DOTALL)
 INLINE_CODE = re.compile(r"`[^`\n]*`")
 HTML_ATTRIBUTE = re.compile(r'\w+="[^"]*"')
+#: Markdown link and image targets. A badge URL carries a percent encoded "%25"
+#: and a shields.io path segment, neither of which is a claim about anything.
+MARKDOWN_TARGET = re.compile(r"\]\([^)]*\)")
 NUMBER = re.compile(r"(?<![\w.])\d+(?:\.\d+)?(?![\w.])")
 
 #: Numbers that appear in prose for reasons unrelated to a measurement.
 ALLOWED_BARE_NUMBERS = {
-    "0", "1", "2", "3", "4", "5", "6", "8", "10", "11", "12", "52", "26",
-    "2026", "100", "104", "240", "53", "0.3", "2.0", "1.0",
+    # ordinals, counts and structural references that are not measurements
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "8",
+    "10",
+    "11",
+    "12",
+    # ADR file numbers, as they appear in link text
+    "001",
+    "002",
+    "003",
+    "004",
+    "005",
+    # fixture shape and supported versions, declared rather than measured
+    "52",
+    "26",
+    "104",
+    "240",
+    "53",
+    "20",
+    "40",
+    "80",
+    "120",
+    "160",
+    "199",
+    "3.11",
+    "3.12",
+    "3.13",
+    "203.12",
+    "203.13",
+    "2026",
+    "100",
+    # thresholds from config.py, which are judgement calls rather than results
+    "35",
+    "90",
+    "2000",
 }
 
 
 def strip_code(text: str) -> str:
     text = FENCE.sub(" ", text)
     text = INLINE_CODE.sub(" ", text)
+    text = MARKDOWN_TARGET.sub(" ", text)
     return HTML_ATTRIBUTE.sub(" ", text)
 
 

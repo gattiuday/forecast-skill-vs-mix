@@ -58,3 +58,15 @@ The superseded positional implementation is kept in `experiments/exp06_extract_f
 so the size of the bug can be re-measured rather than remembered, and
 `test_dropping_zero_sales_rows_no_longer_swings_the_beat_rate_by_double_digits` fails
 if anything reintroduces it.
+
+## A note on the figure in the commit message
+
+The commit that made this change records the swing as 17.7 points. The fixture's forecast
+noise was raised afterwards, in the course of making the realistic scenario less
+flattering, and every published figure was re-measured against the new fixture: the
+current value is 18.9 points.
+
+The commit message is left as it was. It was accurate when written, and rewriting history
+to make an old message agree with a later measurement would defeat the point of having a
+history. The figures that are kept current are the ones in the README and this ADR, and
+`tools/check_numbers.py` is what keeps them that way.

@@ -47,7 +47,7 @@ ANCHORS: dict[str, list[str]] = {
     "skill_points": ["{} points is skill", "skill {} points"],
     "mix_points": ["{} points is mix", "mix {} points"],
     "unattributable_points": ["{} points cannot", "{} points is unattributable"],
-    "skill_share_pct": ["{}% of the improvement", "{}% survives"],
+    "skill_share_pct": ["{}% skill", "{}% of the improvement"],
     "skill_share_min_pct": ["{}% and"],
     "skill_share_max_pct": ["and {}%"],
     "convention_spread_points": ["{} points apart", "spread of {} points"],
@@ -62,9 +62,23 @@ ANCHORS: dict[str, list[str]] = {
     "max_unattributable_churn_pct": ["{}% catalogue churn", "at {}% churn"],
     "smallest_adequate_n": ["{} SKUs before", "about {} SKUs"],
     "detection_rate_at_20_skus_pct": ["{}% of the time"],
-    "recovery_worst_residual_ratio_log10": [],
+    "recovery_worst_residual_min_log10": ["{} orders of magnitude"],
     "n_decomposable": ["{} SKUs are decomposable", "{} decomposable"],
     "n_excluded": ["{} are excluded", "{} SKUs sit outside"],
+    "unattributable_volume_pct": ["{}% of\nvolume", "{}% of volume."],
+    "detection_trials": ["{} trials"],
+    "resolution_n_20_detect_pct": ["| 20 | {}%"],
+    "resolution_n_40_detect_pct": ["| 40 | {}%"],
+    "resolution_n_80_detect_pct": ["| 80 | {}%"],
+    "resolution_n_120_detect_pct": ["| 120 | {}%"],
+    "resolution_n_160_detect_pct": ["| 160 | {}%"],
+    "resolution_n_199_detect_pct": ["| 199 | {}%"],
+    "resolution_n_20_width": ["{} points |"],
+    "resolution_n_40_width": ["{} points |"],
+    "resolution_n_80_width": ["{} points |"],
+    "resolution_n_120_width": ["{} points |"],
+    "resolution_n_160_width": ["{} points |"],
+    "resolution_n_199_width": ["{} points |"],
 }
 
 #: How each metric is rendered into prose. A metric and its anchor must agree
@@ -90,7 +104,20 @@ FORMATS: dict[str, str] = {
     "max_unattributable_share_pct": "{:.0f}",
     "max_unattributable_churn_pct": "{:.0f}",
     "detection_rate_at_20_skus_pct": "{:.0f}",
-    "recovery_worst_residual_ratio_log10": "{:.0f}",
+    "recovery_worst_residual_min_log10": "{:.0f}",
+    "unattributable_volume_pct": "{:.1f}",
+    "resolution_n_20_detect_pct": "{:.0f}",
+    "resolution_n_40_detect_pct": "{:.0f}",
+    "resolution_n_80_detect_pct": "{:.0f}",
+    "resolution_n_120_detect_pct": "{:.0f}",
+    "resolution_n_160_detect_pct": "{:.0f}",
+    "resolution_n_199_detect_pct": "{:.0f}",
+    "resolution_n_20_width": "{:.2f}",
+    "resolution_n_40_width": "{:.2f}",
+    "resolution_n_80_width": "{:.2f}",
+    "resolution_n_120_width": "{:.2f}",
+    "resolution_n_160_width": "{:.2f}",
+    "resolution_n_199_width": "{:.2f}",
 }
 
 CHECKED_DOCUMENTS = (
@@ -168,9 +195,7 @@ def derive() -> dict[str, float]:
             "skill_share_max_pct": spread["skill_share_max"] * 100,
             "convention_spread_points": spread["spread"]["skill_effect_spread"] * 100,
             "n_decomposable": shapley["n_decomposable"],
-            "n_excluded": (
-                shapley["n_entrants"] + shapley["n_exits"] + shapley["n_zero_actual"]
-            ),
+            "n_excluded": (shapley["n_entrants"] + shapley["n_exits"] + shapley["n_zero_actual"]),
             "beat_rate_unweighted_pct": referee["beat_rate_unweighted_pct"],
             "beat_rate_weighted_pct": referee["beat_rate_weighted_pct"],
             "loses_unweighted_pct": referee["loses_unweighted_pct"],
@@ -182,11 +207,16 @@ def derive() -> dict[str, float]:
             "max_unattributable_churn_pct": churn["max_unattributable_share_at_churn"] * 100,
             "smallest_adequate_n": resolution["smallest_adequate_n"],
             "detection_rate_at_20_skus_pct": resolution["detection_rate_at_20_skus"] * 100,
-            "recovery_worst_residual_ratio_log10": math.log10(
-                recovery["worst_residual_ratio"]
+            "recovery_worst_residual_min_log10": -math.floor(
+                math.log10(recovery["worst_residual_ratio"])
             ),
+            "unattributable_volume_pct": shapley["unattributable_volume_share"] * 100,
+            "detection_trials": resolution["trials_per_size"],
         }
     )
+    for row in resolution["series"]:
+        metrics[f"resolution_n_{row['n_skus']}_detect_pct"] = row["detection_rate"] * 100
+        metrics[f"resolution_n_{row['n_skus']}_width"] = row["median_ci_width_points"]
     return metrics
 
 
@@ -202,9 +232,7 @@ def main() -> int:
         run_experiments()
 
     metrics = derive()
-    formatted = {
-        name: FORMATS.get(name, "{}").format(value) for name, value in metrics.items()
-    }
+    formatted = {name: FORMATS.get(name, "{}").format(value) for name, value in metrics.items()}
     METRICS_PATH.write_text(
         json.dumps(
             {
