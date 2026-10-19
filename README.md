@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/GITHUB_USERNAME/forecast-skill-vs-mix/actions/workflows/ci.yml/badge.svg)](https://github.com/GITHUB_USERNAME/forecast-skill-vs-mix/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
-![Tests](https://img.shields.io/badge/tests-221-brightgreen)
+![Tests](https://img.shields.io/badge/tests-258-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -44,7 +44,7 @@ On the committed fixture, a panel of 240 SKUs over 104 weeks:
   loses on 54% of the SKUs it was asked to predict. Those two ways of counting are
   28 points apart depending on which you report.
 
-221 tests, 100% line coverage, and every figure above is re-measured by CI from the
+258 tests, 100% line coverage, and every figure above is re-measured by CI from the
 experiments and checked against this document on every push. The checker works in both
 directions: an anchored figure must appear inside its anchor phrase, and any number in this
 README or the defense guide that matches no measured metric fails the build. An audit broke
@@ -279,8 +279,16 @@ figure sitting in a table cell where no phrase could guard it. The convention ta
 generated and checked by block equality, since twelve cells cannot be guarded by phrases.
 
 The first version of this checker passed fourteen of sixteen deliberately corrupted
-figures. `tests/test_check_numbers.py` now corrupts every published figure in turn and
-asserts the checker goes red, so the claim in this section is itself tested.
+figures. `tests/test_check_numbers.py` now corrupts every published figure in turn,
+including each cell of the generated table and each badge, and asserts the checker goes
+red, so the claim in this section is itself tested. It also asserts that no metric exists
+without being quoted somewhere, since an unquoted metric silently widens the set of
+numbers the reverse check will accept.
+
+What it still cannot catch: a figure corrupted into the value of a *different* published
+figure. The reverse check is set membership, so swapping one measured number for another
+measured number passes. Closing that would need a per claim binding rather than a shared
+pool, and this README does not claim otherwise.
 
 ## Tech stack
 
@@ -289,7 +297,7 @@ asserts the checker goes red, so the claim in this section is itself tested.
 | Python 3.11+ | everything | `zip(strict=True)` catches length mismatches that would otherwise truncate a weights array silently |
 | numpy | the decomposition arithmetic | the effects are dot products of weight and error vectors, which is what the convention table is literally made of |
 | pandas | panel reshaping and the population split | `pivot_table` across two periods is the operation that defines the four populations |
-| pytest | 221 tests | parametrising over four conventions is how exactness is pinned without four copies of each test |
+| pytest | 258 tests | parametrising over four conventions is how exactness is pinned without four copies of each test |
 | ruff | lint and format | one tool, so a contributor cannot pass lint and fail format |
 | GitHub Actions | re-measurement | the numbers in this README are only trustworthy if something recomputes them without being asked |
 

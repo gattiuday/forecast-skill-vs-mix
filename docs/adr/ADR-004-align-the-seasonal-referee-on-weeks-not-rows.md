@@ -68,5 +68,11 @@ current value is 18.9 points.
 
 The commit message is left as it was. It was accurate when written, and rewriting history
 to make an old message agree with a later measurement would defeat the point of having a
-history. The figures that are kept current are the ones in the README and this ADR, and
-`tools/check_numbers.py` is what keeps them that way.
+history.
+
+The figures kept current are the ones in the README, the defense guide and these ADRs.
+`tools/check_numbers.py` checks all of them, and the superseded value above is published
+as a metric of its own rather than exempted, because a number in a checked document that
+no metric accounts for is exactly what the reverse check exists to catch. A re-audit found
+this ADR claiming to be checked while the checker read only two files; the list was short,
+so the list was fixed.

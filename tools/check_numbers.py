@@ -53,6 +53,7 @@ NUMBER = re.compile(r"(?<![\w.])\d+(?:\.\d+)?(?![\w.])")
 #: suite found that: corrupting the test count only changed the badge, and the
 #: build stayed green.
 BADGE = re.compile(r"img\.shields\.io/badge/(?P<label>[^-\s]+)-(?P<value>[^-\s]+)-")
+BADGE_RANGE = re.compile(r"img\.shields\.io/badge/(?P<label>[a-z]+)-(?P<value>[\d.%A-F]+)-")
 
 #: Numbers that appear for reasons unrelated to a measurement. Deliberately
 #: short: every entry here is a figure the reverse check can no longer catch,
@@ -88,6 +89,17 @@ def strip_non_prose(text: str) -> str:
     return HTML_ATTRIBUTE.sub(" ", text)
 
 
+def flatten(text: str) -> str:
+    """Collapse every run of whitespace, newlines included.
+
+    An anchor phrase that spans a line break in wrapped markdown matched nothing
+    while the prose it guarded was correct. Collapsing only horizontal space was
+    not enough: a re-audit found "about 160 SKUs" failing against a document
+    that said exactly that, with a newline between the number and the noun.
+    """
+    return re.sub(r"\s+", " ", text)
+
+
 def normalise(text: str) -> str:
     """Collapse whitespace so an anchor still matches across a wrapped line.
 
@@ -118,6 +130,12 @@ def forward_check(payload: dict, documents: dict[str, str]) -> tuple[list[str], 
     """
     formatted, anchors = payload["formatted"], payload["anchors"]
     verified, failures = [], []
+    #: Values shared by more than one metric. Demanding every colliding metric's
+    #: anchor turns a correct sentence into a failure: the README says "41% skill"
+    #: for the skill share, and the excluded SKU count is also 41. One matching
+    #: anchor for the value is enough, and which metric it belongs to is a
+    #: question the document's wording already answers.
+    satisfied: dict[tuple[str, str], bool] = {}
     for metric in sorted(anchors):
         phrases = anchors[metric]
         value = formatted.get(metric)
@@ -127,18 +145,23 @@ def forward_check(payload: dict, documents: dict[str, str]) -> tuple[list[str], 
         if not phrases:
             failures.append(f"{metric}: has no anchor phrase, so nothing re-checks the prose")
             continue
-        candidates = [phrase.format(value) for phrase in phrases]
+        candidates = [flatten(phrase.format(value)) for phrase in phrases]
         for name, body in documents.items():
-            flat = body.replace("\n", " ")
-            if not any(candidate.replace("\n", " ") in flat for candidate in candidates):
-                if value in NUMBER.findall(body):
-                    failures.append(
+            if any(candidate in flatten(body) for candidate in candidates):
+                satisfied[(name, value)] = True
+                verified.append(f"OK    {metric} = {value}  ({name})")
+            elif value in NUMBER.findall(body):
+                failures.append(
+                    (
+                        name,
+                        value,
                         f"{metric} = {value} appears in {name} but not inside any anchor: "
-                        + " | ".join(repr(c) for c in candidates)
+                        + " | ".join(repr(c) for c in candidates),
                     )
-                continue
-            verified.append(f"OK    {metric} = {value}  ({name})")
-    return verified, failures
+                )
+    return verified, [
+        message for name, value, message in failures if not satisfied.get((name, value), False)
+    ]
 
 
 def reverse_check(payload: dict, documents: dict[str, str]) -> list[str]:
@@ -165,6 +188,12 @@ def reverse_check(payload: dict, documents: dict[str, str]) -> list[str]:
 #: Which badge label must equal which metric.
 BADGE_METRICS = {"tests": "tests_total", "coverage": "coverage_line_pct"}
 
+#: Badges whose value is a list rather than a single figure. The python badge
+#: advertises the supported versions and was checked against neither
+#: pyproject's floor nor the CI matrix; the argument for checking the other two
+#: applies to it unchanged.
+BADGE_RANGES = {"python": "python_min_version"}
+
 
 def badge_check(payload: dict) -> list[str]:
     """Badge values are published claims and must match the measured metric."""
@@ -181,6 +210,17 @@ def badge_check(payload: dict) -> list[str]:
             if actual != expected:
                 failures.append(
                     f"{name}: the {label} badge reads {actual} but {metric} measures {expected}"
+                )
+        for match in BADGE_RANGE.finditer((ROOT / name).read_text()):
+            metric = BADGE_RANGES.get(match.group("label"))
+            if metric is None:
+                continue
+            listed = match.group("value").replace("%20", " ").replace("%7C", "|")
+            floor = formatted[metric]
+            if not listed.strip().startswith(floor):
+                failures.append(
+                    f"{name}: the {match.group('label')} badge lists '{listed}' but the "
+                    f"project's own floor is {floor}"
                 )
     return failures
 

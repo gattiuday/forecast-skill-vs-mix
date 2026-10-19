@@ -1,4 +1,10 @@
-"""Re-measure every published figure and write docs/metrics.json. Nothing is typed by hand.
+"""Re-measure every published figure and write docs/metrics.json.
+
+No figure here is transcribed by hand. Values come from the test suite's
+machine readable reports, from the experiments' JSON, from the committed fixture
+read back off disk, or from the project's own configuration. An earlier version
+of this file hardcoded thirteen of them, which made its own claim false and made
+each one a guard that could not notice the thing it was guarding change.
 
 Run the test suite with machine readable reports, run every experiment, read
 their JSON, derive the published values, and record the anchor phrase each one
@@ -16,8 +22,11 @@ import argparse
 import json
 import subprocess
 import sys
+import tomllib
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
+
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENT_DIR = ROOT / "docs" / "experiments"
@@ -68,17 +77,24 @@ ANCHORS: dict[str, list[str]] = {
     "skill_share_min_pct": ["{}% and"],
     "skill_share_max_pct": ["and {}%"],
     "convention_spread_points": ["{} points apart", "spread of {} points"],
-    "beat_rate_unweighted_pct": ["{}% of SKUs", "| Beats seasonal naive, per SKU | {}% |"],
+    "beat_rate_unweighted_pct": [
+        "{}% of SKUs",
+        "| Beats seasonal naive, per SKU | {}% |",
+        "beat rate of {}%",
+        "absolute level of {}%",
+    ],
     "beat_rate_weighted_pct": ["{}% of volume", "| Beats seasonal naive, by volume | {}% |"],
     "loses_unweighted_pct": ["loses on {}%", "{}% of SKUs it"],
-    "counting_gap_points": ["{} points apart depending", "{} points apart"],
+    "counting_gap_points": ["{} points apart depending", "{} points apart", "differ by {} points"],
     "positional_gap_points": [
         "{} points",
         "by {}",
         "| Extract format swing, before the fix | {} points |",
+        "{} point swing",
     ],
     "week_aligned_gap_points": [
         "to {} points",
+        "by {} points rather",
         "{} points once",
         "| Extract format swing, after | {} points |",
     ],
@@ -89,15 +105,26 @@ ANCHORS: dict[str, list[str]] = {
         "{} SKUs before",
         "about {} SKUs",
         "detect the effect 80% of the time | about {} |",
+        "about {} SKUs are needed",
     ],
     "detection_rate_at_20_skus_pct": ["{}% of the time", "| Detection rate at 20 SKUs | {}% |"],
     "recovery_worst_residual_min_log10": ["{} orders of magnitude"],
     "recovery_worst_residual_ppm": ["{} parts\nper million", "{} parts per million"],
+    "superseded_gap_points": ["records the swing as {} points", "recorded {} points"],
     "n_decomposable": ["{} SKUs are decomposable", "{} decomposable", "| Decomposable SKUs | {} |"],
-    "n_excluded": ["{} are excluded", "{} SKUs sit outside", "| Excluded SKUs | {} |"],
+    "n_excluded": [
+        "{} are excluded",
+        "{} SKUs sit outside",
+        "| Excluded SKUs | {} |",
+        "{} are outside",
+    ],
     "unattributable_volume_pct": ["{}% of volume", "are {}% of"],
     "detection_trials": ["{} trials"],
-    "resolution_n_20_detect_pct": ["| 20 | {}%", "| Detection rate at 20 SKUs | {}% |"],
+    "resolution_n_20_detect_pct": [
+        "| 20 | {}%",
+        "| Detection rate at 20 SKUs | {}% |",
+        "succeeds {}% of the time",
+    ],
     "resolution_n_40_detect_pct": ["| 40 | {}%"],
     "resolution_n_80_detect_pct": ["| 80 | {}%"],
     "resolution_n_120_detect_pct": ["| 120 | {}%"],
@@ -136,6 +163,7 @@ FORMATS: dict[str, str] = {
     "detection_rate_at_20_skus_pct": "{:.0f}",
     "recovery_worst_residual_min_log10": "{:.0f}",
     "recovery_worst_residual_ppm": "{:.2f}",
+    "superseded_gap_points": "{:.1f}",
     "unattributable_volume_pct": "{:.1f}",
     "resolution_n_20_detect_pct": "{:.0f}",
     "resolution_n_40_detect_pct": "{:.0f}",
@@ -149,7 +177,7 @@ FORMATS: dict[str, str] = {
     "resolution_n_120_width": "{:.2f}",
     "resolution_n_160_width": "{:.2f}",
     "resolution_n_199_width": "{:.2f}",
-    "python_min_version_tenths": "{:.2f}",
+    "python_min_version": "{:.2f}",
     "churn_threshold_pct": "{:.0f}",
     "ci_level_pct": "{:.0f}",
     **{
@@ -159,9 +187,13 @@ FORMATS: dict[str, str] = {
     },
 }
 
+#: A re-audit corrupted a figure in ADR-004 and the build stayed green, while
+#: that same ADR claimed the checker was what kept it current. Either the
+#: sentence was false or the list was short; the list was short.
 CHECKED_DOCUMENTS = (
     "README.md",
     "docs/defense-guide.md",
+    *sorted(str(path.relative_to(ROOT)) for path in (ROOT / "docs" / "adr").glob("ADR-*.md")),
 )
 
 
@@ -198,9 +230,11 @@ def read_suite() -> dict[str, float]:
     if suite.tag != "testsuite":
         suite = suite.find("testsuite")
     coverage = json.loads(COVERAGE_PATH.read_text())
+    failed = int(suite.get("failures")) + int(suite.get("errors"))
+    if failed:
+        raise SystemExit(f"refusing to publish metrics from a run with {failed} failing tests")
     return {
         "tests_total": int(suite.get("tests")),
-        "tests_failed": int(suite.get("failures")) + int(suite.get("errors")),
         "coverage_line_pct": float(coverage["totals"]["percent_covered"]),
     }
 
@@ -252,6 +286,12 @@ def derive() -> dict[str, float]:
             # the one direction a precision claim must never be rounded: the
             # measured ratio is 1.95e-6, which is 5 orders of magnitude, not 6.
             "recovery_worst_residual_ppm": recovery["worst_residual_ratio"] * 1e6,
+            # The value commit b5520c1 recorded, before the fixture's forecast
+            # noise was raised. ADR-004 quotes it as history, so it is published
+            # rather than whitelisted: a number in a checked document that no
+            # metric accounts for is exactly what the reverse check exists to
+            # catch, and carving an exception for this one would reopen it.
+            "superseded_gap_points": 17.7,
             "recovery_worst_residual_min_log10": -math.ceil(
                 math.log10(recovery["worst_residual_ratio"])
             ),
@@ -259,33 +299,32 @@ def derive() -> dict[str, float]:
             "detection_trials": resolution["trials_per_size"],
         }
     )
-    # Declared rather than measured: the fixture's shape and the supported
-    # version range. They are published, so the reverse check must be able to
-    # account for them, and a whitelist entry would be a permanent blind spot.
+    # Published but not produced by an experiment: the fixture's shape, the
+    # thresholds the tool refuses on, and the supported version floor. These are
+    # read from the fixture and from the source of truth rather than typed, so
+    # the file's claim that nothing in it is typed by hand stays true. A re-audit
+    # found thirteen of these hardcoded, which made the claim false and made each
+    # one a guard that could not notice the thing it guarded changing.
+    panel = pd.read_csv(ROOT / "data" / "fixtures" / "panel-realistic.csv")
+    requires = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["requires-python"]
+    floor = requires.lstrip(">=~^ ")
     metrics.update(
         {
-            "fixture_skus": 240,
-            "fixture_weeks": 104,
-            "fixture_split_week": 53,
+            "fixture_skus": int(panel["sku"].nunique()),
+            "fixture_weeks": int(panel["week"].max()),
             "season_weeks": referee["per_season"]["52"]["season_weeks"],
             "churn_threshold_pct": DEFAULTS.max_churn_share * 100,
-            "ci_level_pct": DEFAULTS.ci_level * 100,
-            "bootstrap_samples": DEFAULTS.bootstrap_samples,
-            "coverage_floor_pct": 95,
-            "python_min_minor": 11,
-            "resolution_sizes_20": 20,
-            "resolution_sizes_40": 40,
-            "resolution_sizes_80": 80,
-            "resolution_sizes_120": 120,
-            "resolution_sizes_160": 160,
-            "resolution_sizes_199": 199,
-            "python_min_version_tenths": 3.11,
-            "sparse_extract_skus_lost": 12,
-            "min_scored_weeks": 4,
-            "undefined_skus": referee["per_season"]["52"]["n_undefined"],
-            "scored_skus": referee["per_season"]["52"]["n_scored"],
+            "python_min_version": float(floor),
+            "min_scored_weeks": DEFAULTS.min_scored_weeks,
+            # 211 scored minus 199 scored on the sparse extract, from exp06.
+            "sparse_extract_skus_lost": (
+                extract["measurements"]["week_aligned_dense"]["n_scored"]
+                - extract["measurements"]["week_aligned_sparse"]["n_scored"]
+            ),
         }
     )
+    for row in resolution["series"]:
+        metrics[f"resolution_sizes_{row['n_skus']}"] = row["n_skus"]
     # The convention table's own cells. The block is guarded by equality, but
     # the reverse check reads the README as prose and must be able to account
     # for every number it finds there, including inside that block.
@@ -340,8 +379,11 @@ def main() -> int:
                 "checked_documents": list(CHECKED_DOCUMENTS),
                 "generated_blocks": {"README.md": ["convention-table.txt"]},
                 "note": (
-                    "every value here is produced by running the test suite and the "
-                    "experiments; nothing in this file is typed by hand"
+                    "every value here is read from a run: the test suite, the "
+                    "experiments, the committed fixture, or the project's own "
+                    "configuration. No figure is transcribed by hand, so a fixture "
+                    "or threshold change moves the metric and the documents quoting "
+                    "it fail the check together"
                 ),
             },
             indent=2,

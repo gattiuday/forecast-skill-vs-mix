@@ -5,7 +5,9 @@
     ],
     "beat_rate_unweighted_pct": [
       "{}% of SKUs",
-      "| Beats seasonal naive, per SKU | {}% |"
+      "| Beats seasonal naive, per SKU | {}% |",
+      "beat rate of {}%",
+      "absolute level of {}%"
     ],
     "beat_rate_weighted_pct": [
       "{}% of volume",
@@ -17,7 +19,8 @@
     ],
     "counting_gap_points": [
       "{} points apart depending",
-      "{} points apart"
+      "{} points apart",
+      "differ by {} points"
     ],
     "coverage_line_pct": [
       "{}% line coverage"
@@ -53,12 +56,14 @@
     "n_excluded": [
       "{} are excluded",
       "{} SKUs sit outside",
-      "| Excluded SKUs | {} |"
+      "| Excluded SKUs | {} |",
+      "{} are outside"
     ],
     "positional_gap_points": [
       "{} points",
       "by {}",
-      "| Extract format swing, before the fix | {} points |"
+      "| Extract format swing, before the fix | {} points |",
+      "{} point swing"
     ],
     "recovery_worst_residual_min_log10": [
       "{} orders of magnitude"
@@ -88,7 +93,8 @@
     ],
     "resolution_n_20_detect_pct": [
       "| 20 | {}%",
-      "| Detection rate at 20 SKUs | {}% |"
+      "| Detection rate at 20 SKUs | {}% |",
+      "succeeds {}% of the time"
     ],
     "resolution_n_20_width": [
       "{} points |"
@@ -124,7 +130,12 @@
     "smallest_adequate_n": [
       "{} SKUs before",
       "about {} SKUs",
-      "detect the effect 80% of the time | about {} |"
+      "detect the effect 80% of the time | about {} |",
+      "about {} SKUs are needed"
+    ],
+    "superseded_gap_points": [
+      "records the swing as {} points",
+      "recorded {} points"
     ],
     "tests_total": [
       "{} tests"
@@ -140,6 +151,7 @@
     ],
     "week_aligned_gap_points": [
       "to {} points",
+      "by {} points rather",
       "{} points once",
       "| Extract format swing, after | {} points |"
     ],
@@ -151,7 +163,12 @@
   },
   "checked_documents": [
     "README.md",
-    "docs/defense-guide.md"
+    "docs/defense-guide.md",
+    "docs/adr/ADR-001-decompose-rather-than-report-a-portfolio-metric.md",
+    "docs/adr/ADR-002-report-four-conventions-rather-than-choosing-one.md",
+    "docs/adr/ADR-003-aggregate-to-period-totals-before-computing-error.md",
+    "docs/adr/ADR-004-align-the-seasonal-referee-on-weeks-not-rows.md",
+    "docs/adr/ADR-005-what-a-seeded-fixture-cannot-establish.md"
   ],
   "formats": {
     "artifact_removed_points": "{:.1f}",
@@ -184,7 +201,7 @@
     "max_unattributable_share_pct": "{:.0f}",
     "mix_points": "{:.2f}",
     "positional_gap_points": "{:.1f}",
-    "python_min_version_tenths": "{:.2f}",
+    "python_min_version": "{:.2f}",
     "recovery_worst_residual_min_log10": "{:.0f}",
     "recovery_worst_residual_ppm": "{:.2f}",
     "resolution_n_120_detect_pct": "{:.0f}",
@@ -203,6 +220,7 @@
     "skill_share_max_pct": "{:.0f}",
     "skill_share_min_pct": "{:.0f}",
     "skill_share_pct": "{:.0f}",
+    "superseded_gap_points": "{:.1f}",
     "unattributable_points": "{:.2f}",
     "unattributable_volume_pct": "{:.1f}",
     "week_aligned_gap_points": "{:.1f}",
@@ -212,7 +230,6 @@
     "artifact_removed_points": "14.1",
     "beat_rate_unweighted_pct": "46",
     "beat_rate_weighted_pct": "74",
-    "bootstrap_samples": "2000",
     "cell_laspeyres_interaction_effect": "0.00",
     "cell_laspeyres_mix_effect": "1.60",
     "cell_laspeyres_skill_effect": "0.95",
@@ -230,15 +247,12 @@
     "cell_three_term_skill_effect": "0.95",
     "cell_three_term_total": "2.55",
     "churn_threshold_pct": "35",
-    "ci_level_pct": "90",
     "convention_spread_points": "0.43",
     "counting_gap_points": "28",
-    "coverage_floor_pct": "95",
     "coverage_line_pct": "100",
     "detection_rate_at_20_skus_pct": "18",
     "detection_trials": "150",
     "fixture_skus": "240",
-    "fixture_split_week": "53",
     "fixture_weeks": "104",
     "loses_unweighted_pct": "54",
     "max_unattributable_churn_pct": "40",
@@ -248,8 +262,7 @@
     "n_decomposable": "199",
     "n_excluded": "41",
     "positional_gap_points": "18.9",
-    "python_min_minor": "11",
-    "python_min_version_tenths": "3.11",
+    "python_min_version": "3.11",
     "recovery_worst_residual_min_log10": "5",
     "recovery_worst_residual_ppm": "1.95",
     "resolution_n_120_detect_pct": "71",
@@ -270,7 +283,6 @@
     "resolution_sizes_20": "20",
     "resolution_sizes_40": "40",
     "resolution_sizes_80": "80",
-    "scored_skus": "211",
     "season_weeks": "52",
     "skill_points": "1.16",
     "skill_share_max_pct": "48",
@@ -278,11 +290,10 @@
     "skill_share_pct": "41",
     "smallest_adequate_n": "160",
     "sparse_extract_skus_lost": "12",
-    "tests_failed": "0",
-    "tests_total": "221",
+    "superseded_gap_points": "17.7",
+    "tests_total": "258",
     "unattributable_points": "0.32",
     "unattributable_volume_pct": "6.4",
-    "undefined_skus": "29",
     "week_aligned_gap_points": "4.8",
     "wmape_improvement_points": "2.86"
   },
@@ -295,7 +306,6 @@
     "artifact_removed_points": 14.10925595720538,
     "beat_rate_unweighted_pct": 45.97156398104265,
     "beat_rate_weighted_pct": 74.32970493756812,
-    "bootstrap_samples": 2000,
     "cell_laspeyres_interaction_effect": 0.0,
     "cell_laspeyres_mix_effect": 1.5972690321622802,
     "cell_laspeyres_skill_effect": 0.9484115549760517,
@@ -313,15 +323,12 @@
     "cell_three_term_skill_effect": 0.9484115549760517,
     "cell_three_term_total": 2.545680587138332,
     "churn_threshold_pct": 35.0,
-    "ci_level_pct": 90.0,
     "convention_spread_points": 0.43078587731679874,
     "counting_gap_points": 28.358140956525478,
-    "coverage_floor_pct": 95,
     "coverage_line_pct": 100.0,
     "detection_rate_at_20_skus_pct": 18.0,
     "detection_trials": 150,
     "fixture_skus": 240,
-    "fixture_split_week": 53,
     "fixture_weeks": 104,
     "loses_unweighted_pct": 54.02843601895735,
     "max_unattributable_churn_pct": 40.0,
@@ -331,8 +338,7 @@
     "n_decomposable": 199,
     "n_excluded": 41,
     "positional_gap_points": 18.87478978749426,
-    "python_min_minor": 11,
-    "python_min_version_tenths": 3.11,
+    "python_min_version": 3.11,
     "recovery_worst_residual_min_log10": 5,
     "recovery_worst_residual_ppm": 1.950393942376106,
     "resolution_n_120_detect_pct": 70.66666666666667,
@@ -353,7 +359,6 @@
     "resolution_sizes_20": 20,
     "resolution_sizes_40": 40,
     "resolution_sizes_80": 80,
-    "scored_skus": 211,
     "season_weeks": 52,
     "skill_points": 1.1638044936344512,
     "skill_share_max_pct": 48.14607549987931,
@@ -361,13 +366,12 @@
     "skill_share_pct": 40.62697457641834,
     "smallest_adequate_n": 160,
     "sparse_extract_skus_lost": 12,
-    "tests_failed": 0,
-    "tests_total": 221,
+    "superseded_gap_points": 17.7,
+    "tests_total": 258,
     "unattributable_points": 0.3189297013914322,
     "unattributable_volume_pct": 6.396689551744695,
-    "undefined_skus": 29,
     "week_aligned_gap_points": 4.765533830288882,
     "wmape_improvement_points": 2.8646102885297635
   },
-  "note": "every value here is produced by running the test suite and the experiments; nothing in this file is typed by hand"
+  "note": "every value here is read from a run: the test suite, the experiments, the committed fixture, or the project's own configuration. No figure is transcribed by hand, so a fixture or threshold change moves the metric and the documents quoting it fail the check together"
 }

@@ -14,6 +14,7 @@ fails the build.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -66,33 +67,35 @@ def _run(root: Path) -> int:
 
 
 def _corrupt(root: Path, value: str, replacement: str) -> bool:
-    """Corrupt an occurrence the checker is actually responsible for.
+    """Corrupt an occurrence the prose checks can see.
 
-    Using the checker's own stripping to choose the target matters. An earlier
-    version of this test replaced the first occurrence anywhere, which for the
-    test count landed inside a badge URL; the checker stripped markdown targets
-    before looking, so the build stayed green and the test recorded a pass that
-    meant nothing. Badges are now checked separately, and this helper only
-    corrupts text that at least one of the checks can see.
+    Which occurrence matters. An earlier version replaced the first match
+    anywhere, which for the test count landed inside a badge URL that the
+    checker stripped before looking, so the build stayed green and the test
+    recorded a pass that meant nothing. A later version tried to locate a
+    visible occurrence by arithmetic on stripped offsets and got it wrong for
+    three metrics. This one is slower and cannot be wrong: it tries each
+    occurrence in turn and keeps the first whose replacement actually survives
+    stripping, or is caught by the badge or block checks instead.
     """
     for name in _payload()["checked_documents"]:
         path = root / name
-        body = path.read_text()
-        visible = check_numbers.strip_non_prose(body)
-        if value not in visible:
-            continue
-        # Rewrite the occurrence at the position the checker sees it, so the
-        # replacement lands in prose rather than in a stripped span.
-        index, searched = -1, 0
-        while True:
-            index = body.find(value, searched)
-            if index == -1:
-                return False
-            if value in check_numbers.strip_non_prose(body[: index + len(value)])[-len(value) :]:
-                break
-            searched = index + 1
-        path.write_text(body[:index] + replacement + body[index + len(value) :])
-        return True
+        original = path.read_text()
+        # Standalone occurrences only. Searching for the substring found the
+        # "12" inside "120" and the "20" inside "120", corrupting a neighbouring
+        # figure into something the checker had no reason to reject.
+        for match in re.finditer(rf"(?<![\w.]){re.escape(value)}(?![\w.])", original):
+            index = match.start()
+            candidate = original[:index] + replacement + original[index + len(value) :]
+            # Prose only. Treating any shields.io span as visible was wrong:
+            # it let a corruption land inside the python badge, which the badge
+            # check validates by prefix and therefore accepted, so the test
+            # passed without the checker having rejected anything. The badges
+            # have their own dedicated tests below.
+            visible = check_numbers.strip_non_prose(candidate)
+            if replacement in visible:
+                path.write_text(candidate)
+                return True
     return False
 
 
@@ -121,7 +124,7 @@ def test_the_checker_passes_on_the_repository_as_committed(tmp_path):
 #: block, or on a badge. Parametrised over the whole set rather than a hand
 #: picked few, because the figures that slipped through the first version of
 #: the checker were exactly the ones nobody thought to test.
-PUBLISHED = sorted(_payload()["anchors"]) if METRICS.exists() else []
+PUBLISHED = sorted(_payload()["formatted"]) if METRICS.exists() else []
 
 
 @pytest.mark.parametrize("metric", PUBLISHED)
@@ -145,6 +148,43 @@ def test_a_drifted_generated_block_fails_the_build(tmp_path):
     root = _sandbox(tmp_path)
     block = root / "docs" / "generated" / "convention-table.txt"
     block.write_text(block.read_text().replace("convention", "method", 1))
+    assert _run(root) != 0
+
+
+@pytest.mark.parametrize("row", [0, 1, 2, 3])
+def test_corrupting_a_convention_table_cell_fails_the_build(tmp_path, row):
+    """Every cell of the generated table, corrupted in the README.
+
+    A re-audit observed that the block drift test only ever changed a word in
+    the header, so nothing demonstrated that a corrupted *number* inside the
+    fence was caught. These four cases do.
+    """
+    root = _sandbox(tmp_path)
+    readme = root / "README.md"
+    block = (root / "docs" / "generated" / "convention-table.txt").read_text()
+    line = block.strip().split("\n")[2 + row]
+    body = readme.read_text()
+    assert line in body, "the README no longer contains the generated table"
+    readme.write_text(body.replace(line, line.replace("-", "+", 1), 1))
+    assert _run(root) != 0
+
+
+def test_corrupting_the_whole_table_into_another_valid_shape_fails_the_build(tmp_path):
+    """Swapping two rows keeps every number but breaks the block."""
+    root = _sandbox(tmp_path)
+    readme = root / "README.md"
+    block = (root / "docs" / "generated" / "convention-table.txt").read_text()
+    rows = block.strip().split("\n")
+    swapped = "\n".join([*rows[:2], rows[3], rows[2], *rows[4:]])
+    readme.write_text(readme.read_text().replace(block.strip(), swapped, 1))
+    assert _run(root) != 0
+
+
+def test_a_badge_listing_an_unsupported_python_floor_fails_the_build(tmp_path):
+    """The python badge is a published claim and was unchecked until a re-audit."""
+    root = _sandbox(tmp_path)
+    readme = root / "README.md"
+    readme.write_text(readme.read_text().replace("badge/python-3.11", "badge/python-3.99"))
     assert _run(root) != 0
 
 
@@ -177,18 +217,45 @@ def test_a_stale_badge_fails_the_build(tmp_path):
     assert _run(root) != 0
 
 
-def test_every_metric_is_either_published_or_accounted_for(tmp_path):
-    """No metric may be measured, quoted, and guarded by nothing.
+def test_no_metric_exists_only_to_widen_the_allowed_set(tmp_path):
+    """Every metric must be quoted in a checked document, or it is laundering.
 
-    The reverse check accounts for unanchored values by requiring that any
-    number in a checked document match some metric, so a measured but unanchored
-    value is allowed to appear. What is not allowed is a metric that exists only
-    to widen the allowed set without any check referring to it.
+    The reverse check passes any number that matches some metric's value. So a
+    metric nobody quotes is not neutral: it silently permits that number to
+    appear anywhere, which is a hole punched in the one check that catches a
+    corrupted figure in a table cell.
+
+    An earlier version of this test asserted only that *some* unanchored metric
+    was quoted somewhere, which passed while four metrics appeared in no
+    document at all. A re-audit showed that those four let invented sentences
+    through. This asserts the property the docstring claims.
     """
     payload = _payload()
-    unreferenced = set(payload["formatted"]) - set(payload["anchors"])
+    quoted_everywhere = set()
+    for name in payload["checked_documents"]:
+        body = check_numbers.strip_non_prose((ROOT / name).read_text())
+        numbers = set(check_numbers.NUMBER.findall(body))
+        quoted_everywhere |= {
+            metric for metric, value in payload["formatted"].items() if value in numbers
+        }
+    unquoted = sorted(set(payload["formatted"]) - quoted_everywhere)
+    assert not unquoted, (
+        "these metrics are quoted in no checked document, so each one only widens "
+        f"the set of numbers the reverse check will accept: {unquoted}"
+    )
+
+
+def test_an_invented_metric_is_caught_by_the_laundering_test(tmp_path):
+    """The guard above must actually detect a fabricated metric.
+
+    The previous version did not, which is why this exists: a test that cannot
+    fail on the thing it names is worse than no test, because it is counted.
+    """
+    payload = _payload()
+    payload["formatted"]["invented_launderer"] = "73737"
     quoted = set()
     for name in payload["checked_documents"]:
         body = check_numbers.strip_non_prose((ROOT / name).read_text())
-        quoted |= {m for m in unreferenced if m and payload["formatted"][m] in body}
-    assert quoted, "no unanchored metric is quoted anywhere, so the allowed set is dead weight"
+        numbers = set(check_numbers.NUMBER.findall(body))
+        quoted |= {m for m, v in payload["formatted"].items() if v in numbers}
+    assert "invented_launderer" not in quoted

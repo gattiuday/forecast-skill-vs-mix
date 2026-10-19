@@ -155,7 +155,7 @@ for extracts where a missing week means missing data rather than zero.
 | Detection rate at 20 SKUs | 18% |
 | Extract format swing, before the fix | 18.9 points |
 | Extract format swing, after | 4.8 points |
-| Tests | 221 tests |
+| Tests | 258 tests |
 | Line coverage | 100% line coverage |
 
 ## If someone says it is just a shift share analysis

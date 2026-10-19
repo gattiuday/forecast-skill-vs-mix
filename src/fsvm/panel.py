@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from fsvm.config import DEFAULTS
 from fsvm.errors import AttributionError, InsufficientOverlap
 
 REQUIRED_COLUMNS = ("sku", "week", "actual", "forecast")
@@ -124,8 +125,17 @@ def to_period_totals(frame: pd.DataFrame, split_week: int) -> pd.DataFrame:
     return totals
 
 
-def split_populations(totals: pd.DataFrame, min_overlap: int = 30) -> PopulationSplit:
-    """Partition SKUs into decomposable, entrants, exits and zero actual."""
+def split_populations(
+    totals: pd.DataFrame, min_overlap: int = DEFAULTS.min_overlap_skus
+) -> PopulationSplit:
+    """Partition SKUs into decomposable, entrants, exits and zero actual.
+
+    The default comes from `config.Thresholds`. It was a duplicated literal
+    until a re-audit pointed out that `min_overlap_skus` was documented in the
+    config and read by nothing, so changing it there changed nothing. A config
+    entry that nobody reads is worse than a plain literal, because it tells a
+    reviewer the knob works.
+    """
     present0 = totals["a0"].notna()
     present1 = totals["a1"].notna()
     both = present0 & present1

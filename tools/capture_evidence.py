@@ -93,7 +93,7 @@ def main() -> int:
     IMG_DIR.mkdir(parents=True, exist_ok=True)
     entries = []
     for name, command in COMMANDS:
-        output, code, elapsed = run(command)
+        output, code, _elapsed = run(command)
         printable = " ".join(["python", "-m", *command[2:]])
         target = IMG_DIR / f"console-{name}.svg"
         target.write_text(to_svg(printable, output, code))
@@ -102,7 +102,6 @@ def main() -> int:
                 "name": name,
                 "command": printable,
                 "exit_code": code,
-                "wall_seconds": round(elapsed, 2),
                 "output_lines": len(output.rstrip().split("\n")),
                 "svg": str(target.relative_to(ROOT)),
             }
@@ -115,8 +114,9 @@ def main() -> int:
                 "captures": entries,
                 "note": (
                     "each SVG is the verbatim stdout of the command named in it, "
-                    "rendered by this script. Wall seconds are recorded for the replay "
-                    "pacing only and are a fact about the machine, not about the code."
+                    "rendered by this script. No duration is recorded: a wall clock "
+                    "reading is a fact about the machine, and a committed file whose "
+                    "contents change on every run makes a drift gate meaningless."
                 ),
             },
             indent=2,
