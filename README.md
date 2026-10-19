@@ -167,6 +167,18 @@ pinned by a test, rather than silenced with a pragma.
 
 <img src="docs/img/architecture.svg" alt="Pipeline from demand panel through population split and four convention decomposition to a verdict, with the unattributable remainder reported alongside" width="980">
 
+## Evidence
+
+<img src="docs/img/console-attribute.svg" alt="Console output of the attribute command showing the four convention table, the unattributable remainder, the bootstrap interval and the verdict" width="980">
+
+Verbatim stdout of `python -m fsvm.cli attribute`, rendered by `tools/capture_evidence.py`,
+which runs the command and writes what it printed. Every figure visible there is one the
+number checker also verifies against this README.
+[`docs/evidence-manifest.json`](docs/evidence-manifest.json) lists each captured command
+with its exit code.
+
+<img src="docs/img/console-referee.svg" alt="Console output of the referee command showing beat rates against a seasonal naive baseline, unweighted and volume weighted" width="980">
+
 ## What is in the fixture
 
 A seeded generator, not a sample of real demand. 240 SKUs over 104 weeks across four

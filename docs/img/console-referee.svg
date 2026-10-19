@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="740" height="160" viewBox="0 0 740 160">
+<rect width="740" height="160" fill="#1b1f27" rx="8"/>
+<text x="18" y="32" font-family="monospace" font-size="13" fill="#ffd479">$ python -m fsvm.cli referee --panel data/fixtures/panel-realistic.csv</text>
+<text x="722" y="32" text-anchor="end" font-family="monospace" font-size="12" fill="#7d8590">exit 0</text>
+<text x="18" y="64" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">Scored 211 SKUs against a 52 week naive referee</text>
+<text x="18" y="82" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">  undefined (too little history or an exact referee): 29</text>
+<text x="18" y="100" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">  beats the referee, unweighted:      46.0% of SKUs</text>
+<text x="18" y="118" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">  beats the referee, volume weighted: 74.3%</text>
+<text x="18" y="136" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">  median MASE: 1.185</text>
+</svg>

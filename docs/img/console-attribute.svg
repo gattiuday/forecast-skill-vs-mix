@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="892" height="448" viewBox="0 0 892 448">
+<rect width="892" height="448" fill="#1b1f27" rx="8"/>
+<text x="18" y="32" font-family="monospace" font-size="13" fill="#ffd479">$ python -m fsvm.cli attribute --panel data/fixtures/panel-realistic.csv --bootstrap 2000</text>
+<text x="874" y="32" text-anchor="end" font-family="monospace" font-size="12" fill="#7d8590">exit 0</text>
+<text x="18" y="64" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">Portfolio WMAPE  period 0: 0.1105   period 1: 0.0818   change: -2.86 points</text>
+<text x="18" y="82" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve"></text>
+<text x="18" y="100" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">convention       skill       mix  interaction   sums to</text>
+<text x="18" y="118" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">------------------------------------------------------</text>
+<text x="18" y="136" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">laspeyres        -0.95     -1.60        +0.00     -2.55</text>
+<text x="18" y="154" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">paasche          -1.38     -1.17        +0.00     -2.55</text>
+<text x="18" y="172" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">three_term       -0.95     -1.17        -0.43     -2.55</text>
+<text x="18" y="190" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">shapley          -1.16     -1.38        +0.00     -2.55</text>
+<text x="18" y="208" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">------------------------------------------------------</text>
+<text x="18" y="226" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">spread across conventions: skill 0.43 points, mix 0.43 points</text>
+<text x="18" y="244" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve"></text>
+<text x="18" y="262" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">Unattributable change: -0.32 points (6.4% of volume)</text>
+<text x="18" y="280" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">  entrants 14, exits 15, zero demand in a period 12, decomposable 199</text>
+<text x="18" y="298" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve"></text>
+<text x="18" y="316" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">Reported convention: shapley</text>
+<text x="18" y="334" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">90% bootstrap interval on the skill effect: [-1.83, -0.46] points</text>
+<text x="18" y="352" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve"></text>
+<text x="18" y="370" font-family="monospace" font-size="12.5" fill="#ffd479" xml:space="preserve">VERDICT: attributed</text>
+<text x="18" y="388" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">  - skill accounts for 41% of a 2.86 point improvement</text>
+<text x="18" y="406" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">  - the bootstrap interval on the skill effect excludes zero</text>
+<text x="18" y="424" font-family="monospace" font-size="12.5" fill="#e6edf3" xml:space="preserve">  - unattributable volume is 6.4%, within the limit of 35%</text>
+</svg>

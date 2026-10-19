@@ -36,3 +36,10 @@ verify: lint test receipts
 
 clean:
 	rm -rf .pytest_cache .ruff_cache junit.xml coverage.json .coverage
+
+.PHONY: evidence diagram
+evidence:
+	$(PY) tools/capture_evidence.py
+
+diagram:
+	$(PY) tools/render_diagram.py
