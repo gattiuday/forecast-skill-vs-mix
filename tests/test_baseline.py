@@ -137,7 +137,7 @@ def test_dropping_zero_sales_rows_no_longer_swings_the_beat_rate_by_double_digit
     realistic_panel,
 ):
     """Regression pin for the war story. Under the positional referee this gap
-    was 17.7 points. Week alignment plus densification leaves a smaller gap
+    was 18.9 points. Week alignment plus densification leaves a smaller gap
     that is genuine information loss: the sparse extract simply has fewer weeks
     with a recorded forecast to grade."""
     sparse = realistic_panel[realistic_panel["actual"] > 0].reset_index(drop=True)

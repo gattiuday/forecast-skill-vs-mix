@@ -144,9 +144,15 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return handlers[args.command](args)
     except AttributionError as exc:
+        # Includes UndefinedMetric, which is also a ValueError. Order matters:
+        # this clause must come first so a domain refusal is reported as
+        # "cannot answer" rather than as a usage error. Pinned by
+        # test_an_undefined_metric_is_a_cannot_answer_not_a_usage_error.
         print(f"cannot answer: {exc}", file=sys.stderr)
         return EXIT_CANNOT_ANSWER
-    except (FileNotFoundError, ValueError) as exc:
+    except (ValueError, OSError) as exc:
+        # A bad flag value or a path the filesystem refuses. The caller named
+        # the wrong thing, so it is 3 rather than 2.
         print(f"usage error: {exc}", file=sys.stderr)
         return EXIT_USAGE
 

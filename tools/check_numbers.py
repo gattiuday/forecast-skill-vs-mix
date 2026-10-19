@@ -1,24 +1,34 @@
 """Fail the build when a document quotes a figure the code no longer produces.
 
-Two directions:
+This file was rewritten after an audit demonstrated that its first version did
+not do what the README claimed it did. Sixteen published figures were corrupted
+one at a time; fourteen passed. The three causes, and what replaced them:
 
-Forward
-    Every metric that carries an anchor phrase must appear, inside that phrase,
-    in at least one checked document. Anchors are alternatives: the same figure
-    reads differently in a table and in a sentence, and requiring all of them
-    would fail the build for prose that is perfectly correct, which is the
-    fastest way to teach somebody to pass --no-verify.
+1. **Fenced blocks were stripped wholesale.** The convention table, which is the
+   centrepiece of the README, lives in a fence, so seven published values had no
+   guard at all. Now only fences tagged as commands (```bash) are stripped,
+   because an example invocation may legitimately contain an invented row count.
+   A results block is prose with a monospace font and is checked like prose.
 
-Reverse
-    Every number in a checked document should correspond to some metric.
-    Reported rather than enforced, because prose legitimately contains version
-    numbers, years and ordinals. Fenced code, inline code spans and HTML
-    attributes are excluded: an example invocation is allowed to contain an
-    invented row count, and flagging it trains the reader to skip the section.
+2. **An anchor matching in one document satisfied every document.** The defense
+   guide quotes the same figures and was therefore almost entirely unguarded.
+   Now every checked document is checked on its own.
 
-The checker matches phrases rather than digits because a digit search passes
-while the sentence around it has gone stale: "10 SKUs" is still found in a
-document that now says "10 weeks".
+3. **The reverse check only printed a note.** That was the real hole. A forward
+   check can only confirm that a correct sentence exists somewhere; it cannot
+   notice a corrupted one. Corrupting 2.86 to 9.99 leaves the anchored sentence
+   absent *and* introduces a number matching no metric, and it is the second of
+   those that catches a figure quoted in a table cell or a prose aside. The
+   reverse check now fails the build, and the allowed list is small enough that
+   it means something.
+
+Anchors are still alternatives within a document, because the same figure reads
+differently in a table and in a sentence, and requiring all of them would fail
+the build for prose that is perfectly correct.
+
+`tests/test_check_numbers.py` corrupts every published figure in turn and
+asserts this script exits non zero. A checker nobody has watched fail is a
+checker nobody should believe.
 """
 
 from __future__ import annotations
@@ -32,17 +42,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 METRICS_PATH = ROOT / "docs" / "metrics.json"
 
-FENCE = re.compile(r"```.*?```", re.DOTALL)
+#: Only command fences are stripped. A bare fence holds results and is checked.
+COMMAND_FENCE = re.compile(r"```(?:bash|sh|console|python)\n.*?```", re.DOTALL)
 INLINE_CODE = re.compile(r"`[^`\n]*`")
 HTML_ATTRIBUTE = re.compile(r'\w+="[^"]*"')
-#: Markdown link and image targets. A badge URL carries a percent encoded "%25"
-#: and a shields.io path segment, neither of which is a claim about anything.
 MARKDOWN_TARGET = re.compile(r"\]\([^)]*\)")
 NUMBER = re.compile(r"(?<![\w.])\d+(?:\.\d+)?(?![\w.])")
+#: shields.io badge values. A badge is a published claim sitting in the first
+#: screen, and stripping markdown targets hid it from both checks. The test
+#: suite found that: corrupting the test count only changed the badge, and the
+#: build stayed green.
+BADGE = re.compile(r"img\.shields\.io/badge/(?P<label>[^-\s]+)-(?P<value>[^-\s]+)-")
 
-#: Numbers that appear in prose for reasons unrelated to a measurement.
+#: Numbers that appear for reasons unrelated to a measurement. Deliberately
+#: short: every entry here is a figure the reverse check can no longer catch,
+#: so each one is a hole that has to earn its place. Values that look like
+#: results (the fixture's shape, the supported Python versions) are declared as
+#: metrics in collect_metrics.py instead of being whitelisted here.
 ALLOWED_BARE_NUMBERS = {
-    # ordinals, counts and structural references that are not measurements
+    # small ordinals and counts used structurally in prose
     "0",
     "1",
     "2",
@@ -50,44 +68,21 @@ ALLOWED_BARE_NUMBERS = {
     "4",
     "5",
     "6",
+    "7",
     "8",
-    "10",
-    "11",
-    "12",
-    # ADR file numbers, as they appear in link text
+    "9",
+    # ADR file numbers as they appear in link text and cross references
     "001",
     "002",
     "003",
     "004",
     "005",
-    # fixture shape and supported versions, declared rather than measured
-    "52",
-    "26",
-    "104",
-    "240",
-    "53",
-    "20",
-    "40",
-    "80",
-    "120",
-    "160",
-    "199",
-    "3.11",
-    "3.12",
-    "3.13",
-    "203.12",
-    "203.13",
-    "2026",
-    "100",
-    # thresholds from config.py, which are judgement calls rather than results
-    "35",
-    "90",
-    "2000",
 }
 
 
-def strip_code(text: str) -> str:
-    text = FENCE.sub(" ", text)
+def strip_non_prose(text: str) -> str:
+    """Remove the parts of a document that may legitimately contain invented numbers."""
+    text = COMMAND_FENCE.sub(" ", text)
     text = INLINE_CODE.sub(" ", text)
     text = MARKDOWN_TARGET.sub(" ", text)
     return HTML_ATTRIBUTE.sub(" ", text)
@@ -96,38 +91,33 @@ def strip_code(text: str) -> str:
 def normalise(text: str) -> str:
     """Collapse whitespace so an anchor still matches across a wrapped line.
 
-    Rule two of the receipts discipline, learned the hard way: an anchor phrase
-    that spans a newline in wrapped markdown matches nothing, while the prose it
-    was guarding is correct.
+    An anchor phrase that spans a newline in wrapped markdown matches nothing
+    while the prose it guards is correct, so anchors are matched against a
+    single spaced version of the document.
     """
-    return re.sub(r"\s+", " ", text)
+    return re.sub(r"[^\S\n]+", " ", text)
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--summary", type=Path, default=None, help="also write a markdown summary")
-    args = parser.parse_args()
-
-    if not METRICS_PATH.exists():
-        print("docs/metrics.json is missing; run tools/collect_metrics.py first", file=sys.stderr)
-        return 2
-    payload = json.loads(METRICS_PATH.read_text())
-    formatted = payload["formatted"]
-    anchors = payload["anchors"]
-
+def load_documents(payload: dict) -> dict[str, str] | None:
     documents = {}
     for name in payload["checked_documents"]:
         path = ROOT / name
         if not path.exists():
             print(f"FAIL  checked document is missing: {name}", file=sys.stderr)
-            return 1
-        documents[name] = normalise(strip_code(path.read_text()))
+            return None
+        documents[name] = normalise(strip_non_prose(path.read_text()))
+    return documents
 
-    failures: list[str] = []
-    gaps: list[str] = []
-    matched_values: set[str] = set()
-    lines: list[str] = []
 
+def forward_check(payload: dict, documents: dict[str, str]) -> tuple[list[str], list[str]]:
+    """Every anchored metric must appear, inside an anchor phrase, where it is claimed.
+
+    A metric is required in a document only if that document mentions its value
+    at all. That keeps the README's exclusive figures from being demanded of the
+    defense guide, while still checking any figure the defense guide does quote.
+    """
+    formatted, anchors = payload["formatted"], payload["anchors"]
+    verified, failures = [], []
     for metric in sorted(anchors):
         phrases = anchors[metric]
         value = formatted.get(metric)
@@ -135,53 +125,139 @@ def main() -> int:
             failures.append(f"{metric}: anchored but never measured")
             continue
         if not phrases:
-            gaps.append(f"{metric} = {value} has no anchor, so nothing re-checks the prose")
+            failures.append(f"{metric}: has no anchor phrase, so nothing re-checks the prose")
             continue
         candidates = [phrase.format(value) for phrase in phrases]
-        where = [name for name, body in documents.items() if any(c in body for c in candidates)]
-        if where:
-            matched_values.add(value)
-            lines.append(f"OK    {metric} = {value}  ({', '.join(where)})")
-        else:
-            failures.append(
-                f"{metric} = {value} appears in no checked document as any of: "
-                + " | ".join(repr(c) for c in candidates)
-            )
+        for name, body in documents.items():
+            flat = body.replace("\n", " ")
+            if not any(candidate.replace("\n", " ") in flat for candidate in candidates):
+                if value in NUMBER.findall(body):
+                    failures.append(
+                        f"{metric} = {value} appears in {name} but not inside any anchor: "
+                        + " | ".join(repr(c) for c in candidates)
+                    )
+                continue
+            verified.append(f"OK    {metric} = {value}  ({name})")
+    return verified, failures
 
-    unverified: list[str] = []
+
+def reverse_check(payload: dict, documents: dict[str, str]) -> list[str]:
+    """Every number in a checked document must be a measured value or an allowed ordinal.
+
+    This is the half that catches a corrupted figure. A forward check confirms
+    that a correct sentence exists; only this one notices that a wrong number
+    was introduced.
+    """
+    known = set(payload["formatted"].values())
+    failures = []
     for name, body in documents.items():
-        for found in sorted(set(NUMBER.findall(body))):
-            if found in ALLOWED_BARE_NUMBERS or found in matched_values:
-                continue
-            if found in set(formatted.values()):
-                continue
-            unverified.append(f"{name}: {found} matches no metric")
+        for line_number, line in enumerate(body.split("\n"), start=1):
+            for found in NUMBER.findall(line):
+                if found in ALLOWED_BARE_NUMBERS or found in known:
+                    continue
+                failures.append(
+                    f"{name}:{line_number}: {found} matches no measured metric and is not "
+                    "an allowed ordinal"
+                )
+    return failures
 
-    for line in lines:
+
+#: Which badge label must equal which metric.
+BADGE_METRICS = {"tests": "tests_total", "coverage": "coverage_line_pct"}
+
+
+def badge_check(payload: dict) -> list[str]:
+    """Badge values are published claims and must match the measured metric."""
+    formatted = payload["formatted"]
+    failures = []
+    for name in payload["checked_documents"]:
+        for match in BADGE.finditer((ROOT / name).read_text()):
+            label = match.group("label")
+            metric = BADGE_METRICS.get(label)
+            if metric is None:
+                continue
+            expected = formatted[metric]
+            actual = match.group("value").replace("%25", "").replace("%20", " ")
+            if actual != expected:
+                failures.append(
+                    f"{name}: the {label} badge reads {actual} but {metric} measures {expected}"
+                )
+    return failures
+
+
+def block_check(payload: dict) -> list[str]:
+    """Generated blocks must appear in their document verbatim.
+
+    Twelve cells of a fixed width table cannot realistically be guarded by
+    anchor phrases. Block equality guards all of them at once, and it is a
+    stronger guarantee than any phrase: the document either contains exactly
+    what the code produced, or it does not.
+    """
+    failures = []
+    for name, blocks in payload.get("generated_blocks", {}).items():
+        document = (ROOT / name).read_text()
+        for block_name in blocks:
+            source = ROOT / "docs" / "generated" / block_name
+            if not source.exists():
+                failures.append(f"{name}: generated block {block_name} has not been written")
+                continue
+            if source.read_text().rstrip("\n") not in document:
+                failures.append(
+                    f"{name}: does not contain docs/generated/{block_name} verbatim; "
+                    "the document has drifted from what the code produced"
+                )
+    return failures
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--summary", type=Path, default=None, help="also write a markdown summary")
+    parser.add_argument(
+        "--metrics", type=Path, default=METRICS_PATH, help="metrics file to check against"
+    )
+    args = parser.parse_args()
+
+    if not args.metrics.exists():
+        print(f"{args.metrics} is missing; run tools/collect_metrics.py first", file=sys.stderr)
+        return 2
+    payload = json.loads(args.metrics.read_text())
+
+    documents = load_documents(payload)
+    if documents is None:
+        return 1
+
+    verified, stale = forward_check(payload, documents)
+    unverified = reverse_check(payload, documents)
+    drifted = block_check(payload) + badge_check(payload)
+
+    for line in verified:
         print(line)
-    for gap in gaps:
-        print(f"GAP   {gap}")
-    for item in unverified:
-        print(f"NOTE  {item}")
-    for failure in failures:
+    for failure in stale:
+        print(f"FAIL  {failure}", file=sys.stderr)
+    for failure in unverified:
+        print(f"FAIL  {failure}", file=sys.stderr)
+    for failure in drifted:
         print(f"FAIL  {failure}", file=sys.stderr)
 
+    total = len(stale) + len(unverified) + len(drifted)
     print(
-        f"\n{len(lines)} anchored figures verified, {len(gaps)} without an anchor, "
-        f"{len(unverified)} numbers in prose matching no metric, {len(failures)} stale"
+        f"\n{len(verified)} anchored figures verified across "
+        f"{len(documents)} documents, {len(stale)} stale, "
+        f"{len(unverified)} numbers matching no metric, "
+        f"{len(drifted)} generated blocks drifted"
     )
 
     if args.summary:
         args.summary.write_text(
             "## Receipts\n\n"
-            f"- {len(lines)} anchored figures verified against measured values\n"
-            f"- {len(gaps)} metrics carry no anchor phrase\n"
-            f"- {len(unverified)} numbers in prose match no metric\n"
-            f"- {len(failures)} stale figures\n\n"
-            + ("\n".join(f"- FAIL {failure}" for failure in failures) if failures else "")
+            f"- {len(verified)} anchored figures verified across {len(documents)} documents\n"
+            f"- {len(stale)} figures quoted outside their anchor phrase\n"
+            f"- {len(unverified)} numbers in prose matching no measured metric\n\n"
+            + f"- {len(drifted)} generated blocks that have drifted\n\n"
+            + ("\n".join(f"- FAIL {f}" for f in stale + unverified + drifted) if total else "")
             + "\n"
         )
-    return 1 if failures else 0
+    return 1 if total else 0
 
 
 if __name__ == "__main__":

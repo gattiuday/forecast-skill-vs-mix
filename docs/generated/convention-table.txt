@@ -1,0 +1,6 @@
+convention       skill       mix  interaction   sums to
+------------------------------------------------------
+laspeyres        -0.95     -1.60        +0.00     -2.55
+paasche          -1.38     -1.17        +0.00     -2.55
+three_term       -0.95     -1.17        -0.43     -2.55
+shapley          -1.16     -1.38        +0.00     -2.55

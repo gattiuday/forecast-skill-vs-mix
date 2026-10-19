@@ -1,4 +1,4 @@
-"""Capture the real console output as a framed PNG, and a replay manifest.
+"""Capture the real console output as a framed SVG, and a replay manifest.
 
 Everything here is produced by running the tool, never by typesetting a
 screenshot by hand. The manifest records each command with its exit code so a

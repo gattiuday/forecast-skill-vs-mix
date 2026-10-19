@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import numpy as np
 
+from fsvm.errors import UndefinedMetric
+
 __all__ = ["bias", "mape", "mase", "sku_ape", "volume_shares", "weighted_mean_identity", "wmape"]
 
 
@@ -49,7 +51,7 @@ def wmape(actual, forecast) -> float:
     a, f = _check_pair(actual, forecast)
     denominator = a.sum()
     if denominator <= 0:
-        raise ValueError("WMAPE is undefined when total actual demand is zero")
+        raise UndefinedMetric("WMAPE is undefined when total actual demand is zero")
     return float(np.abs(a - f).sum() / denominator)
 
 
@@ -63,7 +65,7 @@ def mape(actual, forecast) -> float:
     a, f = _check_pair(actual, forecast)
     positive = a > 0
     if not positive.any():
-        raise ValueError("MAPE is undefined when every actual is zero")
+        raise UndefinedMetric("MAPE is undefined when every actual is zero")
     return float(np.mean(np.abs(a[positive] - f[positive]) / a[positive]))
 
 
@@ -77,7 +79,7 @@ def bias(actual, forecast) -> float:
     a, f = _check_pair(actual, forecast)
     denominator = a.sum()
     if denominator <= 0:
-        raise ValueError("bias is undefined when total actual demand is zero")
+        raise UndefinedMetric("bias is undefined when total actual demand is zero")
     return float((f - a).sum() / denominator)
 
 
@@ -99,7 +101,7 @@ def volume_shares(actual) -> np.ndarray:
     a = _as_float_array(actual)
     total = a.sum()
     if total <= 0:
-        raise ValueError("volume shares are undefined when total actual demand is zero")
+        raise UndefinedMetric("volume shares are undefined when total actual demand is zero")
     return a / total
 
 
@@ -129,7 +131,7 @@ def mase(actual, forecast, naive_forecast) -> float:
         raise ValueError(f"naive forecast length {n.size} does not match actual length {a.size}")
     naive_mae = float(np.mean(np.abs(a - n)))
     if naive_mae <= 0:
-        raise ValueError(
+        raise UndefinedMetric(
             "MASE is undefined when the naive forecast is exact; "
             "this series is perfectly seasonal and carries no information about skill"
         )

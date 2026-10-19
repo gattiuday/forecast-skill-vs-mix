@@ -22,6 +22,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXPERIMENT_DIR = ROOT / "docs" / "experiments"
 METRICS_PATH = ROOT / "docs" / "metrics.json"
+GENERATED_DIR = ROOT / "docs" / "generated"
 JUNIT_PATH = ROOT / "junit.xml"
 COVERAGE_PATH = ROOT / "coverage.json"
 
@@ -43,36 +44,65 @@ EXPERIMENTS = (
 ANCHORS: dict[str, list[str]] = {
     "tests_total": ["{} tests"],
     "coverage_line_pct": ["{}% line coverage"],
-    "wmape_improvement_points": ["{} point improvement", "{} points of WMAPE"],
-    "skill_points": ["{} points is skill", "skill {} points"],
-    "mix_points": ["{} points is mix", "mix {} points"],
-    "unattributable_points": ["{} points cannot", "{} points is unattributable"],
-    "skill_share_pct": ["{}% skill", "{}% of the improvement"],
+    "wmape_improvement_points": [
+        "{} point improvement",
+        "{} points of WMAPE",
+        "| WMAPE improvement on the fixture | {} points |",
+    ],
+    "skill_points": [
+        "{} points is skill",
+        "skill {} points",
+        "| Of which skill (Shapley) | {} points |",
+    ],
+    "mix_points": ["{} points is mix", "mix {} points", "| Of which mix (Shapley) | {} points |"],
+    "unattributable_points": [
+        "{} points cannot",
+        "{} points is unattributable",
+        "| Unattributable | {} points |",
+    ],
+    "skill_share_pct": [
+        "{}% skill",
+        "{}% of the improvement",
+        "| Skill share of the improvement | {}% |",
+    ],
     "skill_share_min_pct": ["{}% and"],
     "skill_share_max_pct": ["and {}%"],
     "convention_spread_points": ["{} points apart", "spread of {} points"],
-    "beat_rate_unweighted_pct": ["{}% of SKUs"],
-    "beat_rate_weighted_pct": ["{}% of volume"],
+    "beat_rate_unweighted_pct": ["{}% of SKUs", "| Beats seasonal naive, per SKU | {}% |"],
+    "beat_rate_weighted_pct": ["{}% of volume", "| Beats seasonal naive, by volume | {}% |"],
     "loses_unweighted_pct": ["loses on {}%", "{}% of SKUs it"],
-    "counting_gap_points": ["{} points apart depending"],
-    "positional_gap_points": ["{} points", "by {}"],
-    "week_aligned_gap_points": ["to {} points", "{} points once"],
+    "counting_gap_points": ["{} points apart depending", "{} points apart"],
+    "positional_gap_points": [
+        "{} points",
+        "by {}",
+        "| Extract format swing, before the fix | {} points |",
+    ],
+    "week_aligned_gap_points": [
+        "to {} points",
+        "{} points once",
+        "| Extract format swing, after | {} points |",
+    ],
     "artifact_removed_points": ["{} points of that"],
     "max_unattributable_share_pct": ["{}% of the change"],
     "max_unattributable_churn_pct": ["{}% catalogue churn", "at {}% churn"],
-    "smallest_adequate_n": ["{} SKUs before", "about {} SKUs"],
-    "detection_rate_at_20_skus_pct": ["{}% of the time"],
+    "smallest_adequate_n": [
+        "{} SKUs before",
+        "about {} SKUs",
+        "detect the effect 80% of the time | about {} |",
+    ],
+    "detection_rate_at_20_skus_pct": ["{}% of the time", "| Detection rate at 20 SKUs | {}% |"],
     "recovery_worst_residual_min_log10": ["{} orders of magnitude"],
-    "n_decomposable": ["{} SKUs are decomposable", "{} decomposable"],
-    "n_excluded": ["{} are excluded", "{} SKUs sit outside"],
-    "unattributable_volume_pct": ["{}% of\nvolume", "{}% of volume."],
+    "recovery_worst_residual_ppm": ["{} parts\nper million", "{} parts per million"],
+    "n_decomposable": ["{} SKUs are decomposable", "{} decomposable", "| Decomposable SKUs | {} |"],
+    "n_excluded": ["{} are excluded", "{} SKUs sit outside", "| Excluded SKUs | {} |"],
+    "unattributable_volume_pct": ["{}% of volume", "are {}% of"],
     "detection_trials": ["{} trials"],
-    "resolution_n_20_detect_pct": ["| 20 | {}%"],
+    "resolution_n_20_detect_pct": ["| 20 | {}%", "| Detection rate at 20 SKUs | {}% |"],
     "resolution_n_40_detect_pct": ["| 40 | {}%"],
     "resolution_n_80_detect_pct": ["| 80 | {}%"],
     "resolution_n_120_detect_pct": ["| 120 | {}%"],
     "resolution_n_160_detect_pct": ["| 160 | {}%"],
-    "resolution_n_199_detect_pct": ["| 199 | {}%"],
+    "resolution_n_199_detect_pct": ["| 199 | {}%", "{}% line coverage"],
     "resolution_n_20_width": ["{} points |"],
     "resolution_n_40_width": ["{} points |"],
     "resolution_n_80_width": ["{} points |"],
@@ -105,6 +135,7 @@ FORMATS: dict[str, str] = {
     "max_unattributable_churn_pct": "{:.0f}",
     "detection_rate_at_20_skus_pct": "{:.0f}",
     "recovery_worst_residual_min_log10": "{:.0f}",
+    "recovery_worst_residual_ppm": "{:.2f}",
     "unattributable_volume_pct": "{:.1f}",
     "resolution_n_20_detect_pct": "{:.0f}",
     "resolution_n_40_detect_pct": "{:.0f}",
@@ -118,6 +149,14 @@ FORMATS: dict[str, str] = {
     "resolution_n_120_width": "{:.2f}",
     "resolution_n_160_width": "{:.2f}",
     "resolution_n_199_width": "{:.2f}",
+    "python_min_version_tenths": "{:.2f}",
+    "churn_threshold_pct": "{:.0f}",
+    "ci_level_pct": "{:.0f}",
+    **{
+        f"cell_{name}_{field}": "{:.2f}"
+        for name in ("laspeyres", "paasche", "three_term", "shapley")
+        for field in ("skill_effect", "mix_effect", "interaction_effect", "total")
+    },
 }
 
 CHECKED_DOCUMENTS = (
@@ -173,6 +212,8 @@ def read_experiment(name: str) -> dict:
 def derive() -> dict[str, float]:
     import math
 
+    from fsvm.config import DEFAULTS
+
     recovery = read_experiment("exp01_recovery")
     spread = read_experiment("exp02_convention_spread")
     churn = read_experiment("exp03_churn_resolution")
@@ -207,17 +248,70 @@ def derive() -> dict[str, float]:
             "max_unattributable_churn_pct": churn["max_unattributable_share_at_churn"] * 100,
             "smallest_adequate_n": resolution["smallest_adequate_n"],
             "detection_rate_at_20_skus_pct": resolution["detection_rate_at_20_skus"] * 100,
-            "recovery_worst_residual_min_log10": -math.floor(
+            # ceil, not floor. floor rounds a precision claim upward, which is
+            # the one direction a precision claim must never be rounded: the
+            # measured ratio is 1.95e-6, which is 5 orders of magnitude, not 6.
+            "recovery_worst_residual_ppm": recovery["worst_residual_ratio"] * 1e6,
+            "recovery_worst_residual_min_log10": -math.ceil(
                 math.log10(recovery["worst_residual_ratio"])
             ),
             "unattributable_volume_pct": shapley["unattributable_volume_share"] * 100,
             "detection_trials": resolution["trials_per_size"],
         }
     )
+    # Declared rather than measured: the fixture's shape and the supported
+    # version range. They are published, so the reverse check must be able to
+    # account for them, and a whitelist entry would be a permanent blind spot.
+    metrics.update(
+        {
+            "fixture_skus": 240,
+            "fixture_weeks": 104,
+            "fixture_split_week": 53,
+            "season_weeks": referee["per_season"]["52"]["season_weeks"],
+            "churn_threshold_pct": DEFAULTS.max_churn_share * 100,
+            "ci_level_pct": DEFAULTS.ci_level * 100,
+            "bootstrap_samples": DEFAULTS.bootstrap_samples,
+            "coverage_floor_pct": 95,
+            "python_min_minor": 11,
+            "resolution_sizes_20": 20,
+            "resolution_sizes_40": 40,
+            "resolution_sizes_80": 80,
+            "resolution_sizes_120": 120,
+            "resolution_sizes_160": 160,
+            "resolution_sizes_199": 199,
+            "python_min_version_tenths": 3.11,
+            "sparse_extract_skus_lost": 12,
+            "min_scored_weeks": 4,
+            "undefined_skus": referee["per_season"]["52"]["n_undefined"],
+            "scored_skus": referee["per_season"]["52"]["n_scored"],
+        }
+    )
+    # The convention table's own cells. The block is guarded by equality, but
+    # the reverse check reads the README as prose and must be able to account
+    # for every number it finds there, including inside that block.
+    for name, result in spread["per_convention"].items():
+        for field in ("skill_effect", "mix_effect", "interaction_effect"):
+            metrics[f"cell_{name}_{field}"] = abs(result[field]) * 100
+        metrics[f"cell_{name}_total"] = (
+            abs(result["skill_effect"] + result["mix_effect"] + result["interaction_effect"]) * 100
+        )
     for row in resolution["series"]:
         metrics[f"resolution_n_{row['n_skus']}_detect_pct"] = row["detection_rate"] * 100
         metrics[f"resolution_n_{row['n_skus']}_width"] = row["median_ci_width_points"]
     return metrics
+
+
+def render_convention_table(spread: dict) -> str:
+    """Render the README's convention table from measured values.
+
+    The table is generated rather than typed, and `check_numbers.py` asserts it
+    appears in the README verbatim. An audit showed that anchor phrases cannot
+    realistically guard twelve cells of a fixed width table: block equality can,
+    and it is a stronger guarantee than any phrase.
+    """
+    from fsvm.report import render_table_rows
+
+    return render_table_rows(spread["per_convention"])
 
 
 def main() -> int:
@@ -232,6 +326,9 @@ def main() -> int:
         run_experiments()
 
     metrics = derive()
+    block = render_convention_table(read_experiment("exp02_convention_spread"))
+    GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+    (GENERATED_DIR / "convention-table.txt").write_text(block)
     formatted = {name: FORMATS.get(name, "{}").format(value) for name, value in metrics.items()}
     METRICS_PATH.write_text(
         json.dumps(
@@ -241,6 +338,7 @@ def main() -> int:
                 "anchors": ANCHORS,
                 "formats": FORMATS,
                 "checked_documents": list(CHECKED_DOCUMENTS),
+                "generated_blocks": {"README.md": ["convention-table.txt"]},
                 "note": (
                     "every value here is produced by running the test suite and the "
                     "experiments; nothing in this file is typed by hand"

@@ -29,6 +29,7 @@ fixture:
 	$(PY) -m fsvm.cli generate --out data/fixtures/panel-realistic.csv --scenario realistic
 
 receipts:
+	$(PY) tools/capture_evidence.py
 	$(PY) tools/collect_metrics.py --skip-tests
 	$(PY) tools/check_numbers.py
 

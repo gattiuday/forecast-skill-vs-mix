@@ -22,9 +22,10 @@ arithmetic rather than of the demand:
 - **The decomposition is exact.** All four conventions sum to the restricted delta to
   floating point tolerance, on any input. Pinned for every convention.
 - **The decomposition recovers a planted answer.** On a panel constructed so the true
-  skill effect is exactly zero, every convention returns zero to within six orders of
-  magnitude of the change being decomposed. The residual is CSV rounding, not method
-  error.
+  skill effect is exactly zero, every convention returns zero to 5 orders of magnitude
+  below the change being decomposed. The residual is CSV rounding, not method error. The
+  exponent is rounded up rather than down, because rounding a precision claim in the
+  flattering direction is the one rounding a precision claim may not do.
 - **The conventions disagree, and by how much on a given panel.** A property of the
   definitions.
 - **The exit code contract.** Behavioural, not statistical.

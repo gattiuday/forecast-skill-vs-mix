@@ -4,23 +4,27 @@
       "{} points of that"
     ],
     "beat_rate_unweighted_pct": [
-      "{}% of SKUs"
+      "{}% of SKUs",
+      "| Beats seasonal naive, per SKU | {}% |"
     ],
     "beat_rate_weighted_pct": [
-      "{}% of volume"
+      "{}% of volume",
+      "| Beats seasonal naive, by volume | {}% |"
     ],
     "convention_spread_points": [
       "{} points apart",
       "spread of {} points"
     ],
     "counting_gap_points": [
-      "{} points apart depending"
+      "{} points apart depending",
+      "{} points apart"
     ],
     "coverage_line_pct": [
       "{}% line coverage"
     ],
     "detection_rate_at_20_skus_pct": [
-      "{}% of the time"
+      "{}% of the time",
+      "| Detection rate at 20 SKUs | {}% |"
     ],
     "detection_trials": [
       "{} trials"
@@ -38,22 +42,30 @@
     ],
     "mix_points": [
       "{} points is mix",
-      "mix {} points"
+      "mix {} points",
+      "| Of which mix (Shapley) | {} points |"
     ],
     "n_decomposable": [
       "{} SKUs are decomposable",
-      "{} decomposable"
+      "{} decomposable",
+      "| Decomposable SKUs | {} |"
     ],
     "n_excluded": [
       "{} are excluded",
-      "{} SKUs sit outside"
+      "{} SKUs sit outside",
+      "| Excluded SKUs | {} |"
     ],
     "positional_gap_points": [
       "{} points",
-      "by {}"
+      "by {}",
+      "| Extract format swing, before the fix | {} points |"
     ],
     "recovery_worst_residual_min_log10": [
       "{} orders of magnitude"
+    ],
+    "recovery_worst_residual_ppm": [
+      "{} parts\nper million",
+      "{} parts per million"
     ],
     "resolution_n_120_detect_pct": [
       "| 120 | {}%"
@@ -68,13 +80,15 @@
       "{} points |"
     ],
     "resolution_n_199_detect_pct": [
-      "| 199 | {}%"
+      "| 199 | {}%",
+      "{}% line coverage"
     ],
     "resolution_n_199_width": [
       "{} points |"
     ],
     "resolution_n_20_detect_pct": [
-      "| 20 | {}%"
+      "| 20 | {}%",
+      "| Detection rate at 20 SKUs | {}% |"
     ],
     "resolution_n_20_width": [
       "{} points |"
@@ -93,7 +107,8 @@
     ],
     "skill_points": [
       "{} points is skill",
-      "skill {} points"
+      "skill {} points",
+      "| Of which skill (Shapley) | {} points |"
     ],
     "skill_share_max_pct": [
       "and {}%"
@@ -103,30 +118,35 @@
     ],
     "skill_share_pct": [
       "{}% skill",
-      "{}% of the improvement"
+      "{}% of the improvement",
+      "| Skill share of the improvement | {}% |"
     ],
     "smallest_adequate_n": [
       "{} SKUs before",
-      "about {} SKUs"
+      "about {} SKUs",
+      "detect the effect 80% of the time | about {} |"
     ],
     "tests_total": [
       "{} tests"
     ],
     "unattributable_points": [
       "{} points cannot",
-      "{} points is unattributable"
+      "{} points is unattributable",
+      "| Unattributable | {} points |"
     ],
     "unattributable_volume_pct": [
-      "{}% of\nvolume",
-      "{}% of volume."
+      "{}% of volume",
+      "are {}% of"
     ],
     "week_aligned_gap_points": [
       "to {} points",
-      "{} points once"
+      "{} points once",
+      "| Extract format swing, after | {} points |"
     ],
     "wmape_improvement_points": [
       "{} point improvement",
-      "{} points of WMAPE"
+      "{} points of WMAPE",
+      "| WMAPE improvement on the fixture | {} points |"
     ]
   },
   "checked_documents": [
@@ -137,6 +157,24 @@
     "artifact_removed_points": "{:.1f}",
     "beat_rate_unweighted_pct": "{:.0f}",
     "beat_rate_weighted_pct": "{:.0f}",
+    "cell_laspeyres_interaction_effect": "{:.2f}",
+    "cell_laspeyres_mix_effect": "{:.2f}",
+    "cell_laspeyres_skill_effect": "{:.2f}",
+    "cell_laspeyres_total": "{:.2f}",
+    "cell_paasche_interaction_effect": "{:.2f}",
+    "cell_paasche_mix_effect": "{:.2f}",
+    "cell_paasche_skill_effect": "{:.2f}",
+    "cell_paasche_total": "{:.2f}",
+    "cell_shapley_interaction_effect": "{:.2f}",
+    "cell_shapley_mix_effect": "{:.2f}",
+    "cell_shapley_skill_effect": "{:.2f}",
+    "cell_shapley_total": "{:.2f}",
+    "cell_three_term_interaction_effect": "{:.2f}",
+    "cell_three_term_mix_effect": "{:.2f}",
+    "cell_three_term_skill_effect": "{:.2f}",
+    "cell_three_term_total": "{:.2f}",
+    "churn_threshold_pct": "{:.0f}",
+    "ci_level_pct": "{:.0f}",
     "convention_spread_points": "{:.2f}",
     "counting_gap_points": "{:.0f}",
     "coverage_line_pct": "{:.0f}",
@@ -146,7 +184,9 @@
     "max_unattributable_share_pct": "{:.0f}",
     "mix_points": "{:.2f}",
     "positional_gap_points": "{:.1f}",
+    "python_min_version_tenths": "{:.2f}",
     "recovery_worst_residual_min_log10": "{:.0f}",
+    "recovery_worst_residual_ppm": "{:.2f}",
     "resolution_n_120_detect_pct": "{:.0f}",
     "resolution_n_120_width": "{:.2f}",
     "resolution_n_160_detect_pct": "{:.0f}",
@@ -172,19 +212,46 @@
     "artifact_removed_points": "14.1",
     "beat_rate_unweighted_pct": "46",
     "beat_rate_weighted_pct": "74",
+    "bootstrap_samples": "2000",
+    "cell_laspeyres_interaction_effect": "0.00",
+    "cell_laspeyres_mix_effect": "1.60",
+    "cell_laspeyres_skill_effect": "0.95",
+    "cell_laspeyres_total": "2.55",
+    "cell_paasche_interaction_effect": "0.00",
+    "cell_paasche_mix_effect": "1.17",
+    "cell_paasche_skill_effect": "1.38",
+    "cell_paasche_total": "2.55",
+    "cell_shapley_interaction_effect": "0.00",
+    "cell_shapley_mix_effect": "1.38",
+    "cell_shapley_skill_effect": "1.16",
+    "cell_shapley_total": "2.55",
+    "cell_three_term_interaction_effect": "0.43",
+    "cell_three_term_mix_effect": "1.17",
+    "cell_three_term_skill_effect": "0.95",
+    "cell_three_term_total": "2.55",
+    "churn_threshold_pct": "35",
+    "ci_level_pct": "90",
     "convention_spread_points": "0.43",
     "counting_gap_points": "28",
+    "coverage_floor_pct": "95",
     "coverage_line_pct": "100",
     "detection_rate_at_20_skus_pct": "18",
     "detection_trials": "150",
+    "fixture_skus": "240",
+    "fixture_split_week": "53",
+    "fixture_weeks": "104",
     "loses_unweighted_pct": "54",
     "max_unattributable_churn_pct": "40",
     "max_unattributable_share_pct": "50",
+    "min_scored_weeks": "4",
     "mix_points": "1.38",
     "n_decomposable": "199",
     "n_excluded": "41",
     "positional_gap_points": "18.9",
-    "recovery_worst_residual_min_log10": "6",
+    "python_min_minor": "11",
+    "python_min_version_tenths": "3.11",
+    "recovery_worst_residual_min_log10": "5",
+    "recovery_worst_residual_ppm": "1.95",
     "resolution_n_120_detect_pct": "71",
     "resolution_n_120_width": "1.78",
     "resolution_n_160_detect_pct": "95",
@@ -197,35 +264,77 @@
     "resolution_n_40_width": "3.01",
     "resolution_n_80_detect_pct": "51",
     "resolution_n_80_width": "2.16",
+    "resolution_sizes_120": "120",
+    "resolution_sizes_160": "160",
+    "resolution_sizes_199": "199",
+    "resolution_sizes_20": "20",
+    "resolution_sizes_40": "40",
+    "resolution_sizes_80": "80",
+    "scored_skus": "211",
+    "season_weeks": "52",
     "skill_points": "1.16",
     "skill_share_max_pct": "48",
     "skill_share_min_pct": "33",
     "skill_share_pct": "41",
     "smallest_adequate_n": "160",
+    "sparse_extract_skus_lost": "12",
     "tests_failed": "0",
-    "tests_total": "167",
+    "tests_total": "221",
     "unattributable_points": "0.32",
     "unattributable_volume_pct": "6.4",
+    "undefined_skus": "29",
     "week_aligned_gap_points": "4.8",
     "wmape_improvement_points": "2.86"
+  },
+  "generated_blocks": {
+    "README.md": [
+      "convention-table.txt"
+    ]
   },
   "metrics": {
     "artifact_removed_points": 14.10925595720538,
     "beat_rate_unweighted_pct": 45.97156398104265,
     "beat_rate_weighted_pct": 74.32970493756812,
+    "bootstrap_samples": 2000,
+    "cell_laspeyres_interaction_effect": 0.0,
+    "cell_laspeyres_mix_effect": 1.5972690321622802,
+    "cell_laspeyres_skill_effect": 0.9484115549760517,
+    "cell_laspeyres_total": 2.5456805871383317,
+    "cell_paasche_interaction_effect": 0.0,
+    "cell_paasche_mix_effect": 1.1664831548454817,
+    "cell_paasche_skill_effect": 1.3791974322928504,
+    "cell_paasche_total": 2.5456805871383317,
+    "cell_shapley_interaction_effect": 0.0,
+    "cell_shapley_mix_effect": 1.381876093503881,
+    "cell_shapley_skill_effect": 1.1638044936344512,
+    "cell_shapley_total": 2.5456805871383317,
+    "cell_three_term_interaction_effect": 0.4307858773167989,
+    "cell_three_term_mix_effect": 1.1664831548454817,
+    "cell_three_term_skill_effect": 0.9484115549760517,
+    "cell_three_term_total": 2.545680587138332,
+    "churn_threshold_pct": 35.0,
+    "ci_level_pct": 90.0,
     "convention_spread_points": 0.43078587731679874,
     "counting_gap_points": 28.358140956525478,
+    "coverage_floor_pct": 95,
     "coverage_line_pct": 100.0,
     "detection_rate_at_20_skus_pct": 18.0,
     "detection_trials": 150,
+    "fixture_skus": 240,
+    "fixture_split_week": 53,
+    "fixture_weeks": 104,
     "loses_unweighted_pct": 54.02843601895735,
     "max_unattributable_churn_pct": 40.0,
     "max_unattributable_share_pct": 50.07442874682019,
+    "min_scored_weeks": 4,
     "mix_points": 1.381876093503881,
     "n_decomposable": 199,
     "n_excluded": 41,
     "positional_gap_points": 18.87478978749426,
-    "recovery_worst_residual_min_log10": 6,
+    "python_min_minor": 11,
+    "python_min_version_tenths": 3.11,
+    "recovery_worst_residual_min_log10": 5,
+    "recovery_worst_residual_ppm": 1.950393942376106,
     "resolution_n_120_detect_pct": 70.66666666666667,
     "resolution_n_120_width": 1.7776200961277462,
     "resolution_n_160_detect_pct": 95.33333333333334,
@@ -238,15 +347,25 @@
     "resolution_n_40_width": 3.009385205799745,
     "resolution_n_80_detect_pct": 50.66666666666667,
     "resolution_n_80_width": 2.1559449322856654,
+    "resolution_sizes_120": 120,
+    "resolution_sizes_160": 160,
+    "resolution_sizes_199": 199,
+    "resolution_sizes_20": 20,
+    "resolution_sizes_40": 40,
+    "resolution_sizes_80": 80,
+    "scored_skus": 211,
+    "season_weeks": 52,
     "skill_points": 1.1638044936344512,
     "skill_share_max_pct": 48.14607549987931,
     "skill_share_min_pct": 33.10787365295737,
     "skill_share_pct": 40.62697457641834,
     "smallest_adequate_n": 160,
+    "sparse_extract_skus_lost": 12,
     "tests_failed": 0,
-    "tests_total": 167,
+    "tests_total": 221,
     "unattributable_points": 0.3189297013914322,
     "unattributable_volume_pct": 6.396689551744695,
+    "undefined_skus": 29,
     "week_aligned_gap_points": 4.765533830288882,
     "wmape_improvement_points": 2.8646102885297635
   },

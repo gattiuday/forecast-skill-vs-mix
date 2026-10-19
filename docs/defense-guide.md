@@ -20,7 +20,7 @@ portfolio shifting toward items that were always easier to forecast. Nobody aske
 that is the uncomfortable part. This is the tool that would have answered the question,
 built on a fixture where I know the right answer so I can show it finds it.
 
-## The five questions I expect
+## The six questions I expect
 
 ### 1. "Your decomposition needs a convention. Which one is correct?"
 
@@ -42,14 +42,49 @@ I cannot, on real data, which is why the fixture is constructed rather than samp
 scenarios have the answer planted. In `pure_mix` every SKU's per SKU percentage error is
 identical in both periods by construction, so the true skill effect is exactly zero. In
 `pure_skill` each SKU's period volume is held constant, so the true mix effect is exactly
-zero. All four conventions recover both planted zeros to under one part in a million of
-the change being decomposed, and the residual is the fixture's three decimal rounding
-rather than method error.
+zero. All four conventions recover both planted zeros to 5 orders of magnitude below the
+change being decomposed, and the residual is the fixture's three decimal rounding rather
+than method error.
+
+If someone checks that number against `exp01_recovery.json`, the worst ratio is 1.95 parts
+per million. An earlier draft of this guide rounded that to "under one part in a million",
+which is false, and the metric collector was rounding the exponent down, which rounds a
+precision claim in the flattering direction. Both are fixed; the collector now rounds up.
 
 Separately, every convention is tested to sum exactly to the restricted change. That one
 matters most: an inexact decomposition lets a residual masquerade as skill.
 
-### 3. "What is this tool wrong about?"
+### 3. "What is the weakest part of this repository?"
+
+The number checker, and I know that because it failed an audit rather than because I
+reasoned my way to it.
+
+The first version claimed in the README that a stale figure fails the build. Someone
+corrupted sixteen published figures one at a time and fourteen passed. Three causes. It
+stripped fenced blocks before looking, so the convention table, which is the centrepiece
+of the README, had no guard on any of its twelve cells. An anchor matching in one document
+counted for every document, so the defense guide you are reading was almost entirely
+unchecked. And the reverse direction, which looks for numbers that match no metric, only
+printed a note instead of failing.
+
+That last one was the real hole. A forward check can only confirm that a correct sentence
+exists somewhere; it cannot notice that a wrong number was introduced. Corrupting a
+published figure leaves the anchored sentence missing and introduces a number matching
+nothing, and it is the second of those that catches a figure sitting in a table cell where
+no phrase could reach it.
+
+What it does now: the reverse check fails the build, every document is checked separately,
+the convention table is generated from the measured values and verified by block equality,
+the badges are checked against the metrics they advertise, and `tests/test_check_numbers.py`
+corrupts every published figure in turn and asserts the build goes red. The checker has a
+test because a checker nobody has watched fail is a checker nobody should believe.
+
+I would rather be asked this than any other question here, because the answer is the
+engineering story. The tool is a shift share decomposition, which is standard. The thing
+that took work was making the numbers in the documents impossible to leave stale, and that
+took getting it wrong first.
+
+### 4. "What is this tool wrong about?"
 
 Three things, and I would rather say them first.
 
@@ -60,14 +95,14 @@ whether a forecast is fit for replenishment. ADR-003.
 
 The absolute numbers are properties of the generator. The beat rate of 46% is not a fact
 about any real forecast. What transfers is the structure: that the unweighted and volume
-weighted rates differ by 28 points is a property of skewed volume, which every portfolio
+weighted rates are 28 points apart is a property of skewed volume, which every portfolio
 has.
 
 And it cannot tell you whether the split agrees with what your planning team already
 believes. That calibration needs a real panel and a period where the team has a firm
 opinion. ADR-005 is the full boundary statement.
 
-### 4. "Walk me through a bug you found."
+### 5. "Walk me through a bug you found."
 
 The seasonal naive referee originally shifted by 52 rows rather than 52 weeks. Those are
 the same thing only when every SKU has a row for every week, and a sales extract from an
@@ -89,7 +124,7 @@ I kept the broken implementation in `experiments/exp06_extract_format.py` so the
 the bug stays re-measurable, and there is a regression test that fails if anything
 reintroduces it. ADR-004.
 
-### 5. "What would you build next, and what did you deliberately leave out?"
+### 6. "What would you build next, and what did you deliberately leave out?"
 
 Left out: attributing the mix shift to specific SKUs or categories. The tool says how
 much of a change was mix; the obvious next question is what drove it. I did not build
@@ -120,7 +155,7 @@ for extracts where a missing week means missing data rather than zero.
 | Detection rate at 20 SKUs | 18% |
 | Extract format swing, before the fix | 18.9 points |
 | Extract format swing, after | 4.8 points |
-| Tests | 167 tests |
+| Tests | 221 tests |
 | Line coverage | 100% line coverage |
 
 ## If someone says it is just a shift share analysis

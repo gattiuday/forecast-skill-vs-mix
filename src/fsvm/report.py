@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fsvm.config import DEFAULTS, Thresholds
+from fsvm.config import CONVENTIONS, DEFAULTS, Thresholds
 from fsvm.decompose import Attribution
 
 ATTRIBUTED = "attributed"
@@ -114,3 +114,26 @@ def render_table(results: dict[str, Attribution], spread: dict[str, float]) -> s
         f"decomposable {any_result.n_decomposable}",
     ]
     return "\n".join(lines)
+
+
+def render_table_rows(per_convention: dict[str, dict]) -> str:
+    """The convention table alone, for embedding in a document.
+
+    Shares its column layout with `render_table` so the README block and the
+    console output cannot disagree. `tools/collect_metrics.py` writes this to
+    docs/generated/ and the number checker asserts the README contains it
+    verbatim, which guards all twelve cells by equality rather than by phrase.
+    """
+    lines = [
+        f"{'convention':<12} {'skill':>9} {'mix':>9} {'interaction':>12} {'sums to':>9}",
+        "-" * 54,
+    ]
+    for name in CONVENTIONS:
+        result = per_convention[name]
+        total = result["skill_effect"] + result["mix_effect"] + result["interaction_effect"]
+        lines.append(
+            f"{name:<12} {_points(result['skill_effect']):>9} "
+            f"{_points(result['mix_effect']):>9} "
+            f"{_points(result['interaction_effect']):>12} {_points(total):>9}"
+        )
+    return "\n".join(lines) + "\n"

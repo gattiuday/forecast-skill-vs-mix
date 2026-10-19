@@ -14,6 +14,7 @@ from fsvm.cli import (
     EXIT_USAGE,
     main,
 )
+from fsvm.errors import AttributionError
 
 
 def test_generate_writes_a_panel_and_exits_zero(tmp_path, capsys):
@@ -119,3 +120,50 @@ def test_referee_returns_two_when_no_sku_has_enough_history(tmp_path, realistic_
 def test_every_exit_code_has_a_distinct_value():
     codes = {EXIT_OK, EXIT_NOT_ATTRIBUTED, EXIT_CANNOT_ANSWER, EXIT_USAGE}
     assert codes == {0, 1, 2, 3}
+
+
+def test_a_panel_with_no_demand_in_a_period_is_a_cannot_answer(tmp_path, realistic_panel):
+    frame = realistic_panel.copy()
+    frame.loc[frame["week"] >= 53, "actual"] = 0.0
+    path = tmp_path / "dead.csv"
+    frame.to_csv(path, index=False)
+    assert main(["attribute", "--panel", str(path)]) == EXIT_CANNOT_ANSWER
+
+
+def test_an_undefined_metric_is_a_cannot_answer_not_a_usage_error():
+    """UndefinedMetric subclasses both AttributionError and ValueError, so the
+    order of the handlers in `main` decides which code it gets. An audit found
+    the CLI contradicting its own documented contract here, so the ordering is
+    pinned rather than left to the reader of the except clauses."""
+    from fsvm.errors import UndefinedMetric
+
+    assert issubclass(UndefinedMetric, ValueError)
+    assert issubclass(UndefinedMetric, AttributionError)
+
+    def explode(_args):
+        raise UndefinedMetric("WMAPE is undefined when total actual demand is zero")
+
+    import fsvm.cli as cli
+
+    original = cli._run_referee
+    cli._run_referee = explode
+    try:
+        assert main(["referee", "--panel", "ignored.csv"]) == EXIT_CANNOT_ANSWER
+    finally:
+        cli._run_referee = original
+
+
+def test_a_bad_flag_value_is_a_usage_error_not_a_cannot_answer(tmp_path):
+    """The mirror case: `--weeks 50` is the caller mistyping, which is 3."""
+    assert main(["generate", "--out", str(tmp_path / "p.csv"), "--weeks", "50"]) == EXIT_USAGE
+
+
+def test_a_missing_file_remains_a_usage_error(tmp_path):
+    assert main(["referee", "--panel", str(tmp_path / "absent.csv")]) == EXIT_USAGE
+
+
+def test_an_unreadable_panel_directory_is_a_usage_error(tmp_path):
+    """A directory where a file was expected is the caller's mistake, so 3."""
+    target = tmp_path / "panel.csv"
+    target.mkdir()
+    assert main(["attribute", "--panel", str(target)]) == EXIT_USAGE

@@ -96,15 +96,28 @@ jobs:
             junit.xml
           if-no-files-found: error
 
-  diagram:
-    name: Diagram is current
+  committed-artifacts:
+    name: Diagram and evidence are current
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Re-render and check for drift
+      - name: Install
+        run: python -m pip install -e .
+      - name: Re-render the diagram and check for drift
         run: |
           python tools/render_diagram.py
           git diff --exit-code docs/img/architecture.svg
+      # The console SVGs are published evidence. Without this gate they can go
+      # stale silently while the numbers they show move, which an audit found.
+      - name: Re-capture the console evidence and check for drift
+        run: |
+          python tools/capture_evidence.py
+          git diff --exit-code docs/img/console-attribute.svg docs/img/console-referee.svg
+      - name: Regenerate the fixture and check it is byte identical
+        run: |
+          python -m fsvm.cli generate \
+            --out data/fixtures/panel-realistic.csv --scenario realistic
+          git diff --exit-code data/fixtures/panel-realistic.csv

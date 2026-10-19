@@ -23,7 +23,7 @@ def skill_effect_interval(
     convention: str = "shapley",
     samples: int = DEFAULTS.bootstrap_samples,
     level: float = DEFAULTS.ci_level,
-    seed: int = 20260419,
+    seed: int = DEFAULTS.bootstrap_seed,
 ) -> dict[str, float]:
     """Percentile bootstrap interval for the skill effect, resampling SKUs.
 

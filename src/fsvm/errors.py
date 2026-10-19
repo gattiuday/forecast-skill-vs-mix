@@ -13,3 +13,20 @@ class AttributionError(Exception):
 
 class InsufficientOverlap(AttributionError):
     """Raised when too few SKUs appear in both periods to decompose anything."""
+
+
+class UndefinedMetric(AttributionError, ValueError):
+    """Raised when a metric is not defined on the data, as opposed to miscalled.
+
+    Subclasses both deliberately. It is a ValueError because that is what a
+    caller computing a mean over an empty series expects to catch, and it is an
+    AttributionError because, at the CLI boundary, it means the tool declined to
+    answer rather than that the user mistyped a flag.
+
+    That boundary is why the type exists. Inferring "cannot answer" from the
+    exception class alone was a guess, and it produced a CLI that mapped a
+    genuine usage error and a genuine domain refusal to the same code in one
+    direction and to the wrong one in the other. An audit found the contract
+    and the code disagreeing; this makes the distinction structural, so the
+    handler reads the author's intent rather than reconstructing it.
+    """

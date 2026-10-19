@@ -10,7 +10,7 @@ is not pedantic. An ERP sales extract usually omits weeks with no sales, so the
 rows for a slow moving SKU are not contiguous, and a positional shift of 52 rows
 reaches back an arbitrary number of weeks. See ADR-004 and the war story in the
 README: on this repository's own fixture, the positional version moved the
-unweighted beat rate by 17.7 points.
+unweighted beat rate by 18.9 points.
 """
 
 from __future__ import annotations
@@ -18,11 +18,12 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from fsvm.config import DEFAULTS
 from fsvm.errors import AttributionError
 from fsvm.metrics import mase
 
-DEFAULT_SEASON_WEEKS = 52
-MIN_SCORED_WEEKS = 4
+DEFAULT_SEASON_WEEKS = DEFAULTS.season_weeks
+MIN_SCORED_WEEKS = DEFAULTS.min_scored_weeks
 
 
 def seasonal_naive(weeks, values, season: int = DEFAULT_SEASON_WEEKS) -> np.ndarray:

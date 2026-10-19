@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/GITHUB_USERNAME/forecast-skill-vs-mix/actions/workflows/ci.yml/badge.svg)](https://github.com/GITHUB_USERNAME/forecast-skill-vs-mix/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)
-![Tests](https://img.shields.io/badge/tests-167-brightgreen)
+![Tests](https://img.shields.io/badge/tests-221-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -13,8 +13,9 @@
 Portfolio WMAPE is a volume weighted mean of per SKU errors. Between two periods, two
 things move: the errors and the weights. The resulting number carries both and has no
 structure that separates them, so **a portfolio accuracy improvement cannot say whether
-anyone forecast better.** This is not a precision problem that a better metric fixes.
-The information is destroyed at the point of aggregation.
+anyone forecast better.** This is not a precision problem that a better metric fixes: the
+scalar does not carry the distinction, and nothing computed from the scalar alone can
+recover it. The per SKU detail still has it, which is what this tool reads.
 
 Four questions this answers that a quarterly accuracy report cannot:
 
@@ -32,19 +33,23 @@ On the committed fixture, a panel of 240 SKUs over 104 weeks:
 
 - **1.16 points is skill, 1.38 points is mix**, out of a 2.86 point improvement. The
   planning team earned less than half of a number they would normally present whole.
-- **0.32 points cannot be attributed to either**, and the SKUs responsible are 6.4% of
-  volume. 199 SKUs are decomposable; 41 are excluded because no per SKU percentage error
+- **0.32 points cannot be attributed to either**, and the SKUs responsible are 6.4% of volume. 199 SKUs are decomposable; 41 are excluded because no per SKU percentage error
   is defined for them.
 - **The four standard decomposition conventions put between 33% and 48% of the
-  improvement on skill**, a spread of 0.43 points. That spread is the size of a modelling
-  choice, not a measurement, and this tool prints all four rather than picking quietly.
+  improvement on skill**, a spread of 0.43 points. Laspeyres and the three term form share
+  a skill term by construction, so the four conventions yield three distinct answers, not
+  four. That spread is the size of a modelling choice rather than a measurement, and this
+  tool prints every convention rather than picking one quietly.
 - **The forecast beats a seasonal naive referee on 46% of SKUs and 74% of volume.** It
-  loses on 54% of the SKUs it was asked to predict. Those two ways of counting are 28
-  points apart depending on which you report.
+  loses on 54% of the SKUs it was asked to predict. Those two ways of counting are
+  28 points apart depending on which you report.
 
-167 tests, 100% line coverage, and every figure above is re-measured by CI from the
-experiments and checked against this document's wording on every push. If a number here
-stops matching what the code produces, the build fails.
+221 tests, 100% line coverage, and every figure above is re-measured by CI from the
+experiments and checked against this document on every push. The checker works in both
+directions: an anchored figure must appear inside its anchor phrase, and any number in this
+README or the defense guide that matches no measured metric fails the build. An audit broke
+the first version of that checker in a minute, so it now has a test of its own that corrupts
+each published figure in turn and asserts the build goes red.
 
 ## Quickstart
 
@@ -76,9 +81,14 @@ three_term       -0.95     -1.17        -0.43     -2.55
 shapley          -1.16     -1.38        +0.00     -2.55
 ```
 
+This block is generated from the measured values by `tools/collect_metrics.py` and the
+number checker asserts the README contains it verbatim, so no cell here can drift.
+
 Each convention is exact: the effects sum to the restricted change to floating point
 tolerance, pinned by a test for all four. They differ only in which period's values are
-held constant, which is a definition rather than a measurement. Shapley is reported by
+held constant, which is a definition rather than a measurement. Laspeyres and the three
+term form hold mix at the base period for the skill term and therefore produce the same
+skill number, so the table shows four conventions and three distinct answers. Shapley is reported by
 default because it is the only one of the four symmetric in the two periods, so the
 answer does not depend on which period the analyst called the base. ADR-002 has the
 reasoning.
@@ -93,8 +103,8 @@ unobservable. So two fixture scenarios are built with the answer planted:
 
 | Scenario | Construction | True effect | Worst measured residual |
 | --- | --- | --- | --- |
-| `pure_mix` | per SKU errors identical in both periods | skill is exactly zero | 6 orders of magnitude below the change |
-| `pure_skill` | each SKU's period volume held constant | mix is exactly zero | 6 orders of magnitude below the change |
+| `pure_mix` | per SKU errors identical in both periods | skill is exactly zero | 5 orders of magnitude below the change |
+| `pure_skill` | each SKU's period volume held constant | mix is exactly zero | 5 orders of magnitude below the change |
 
 All four conventions recover both planted zeros. The residual is the fixture's three
 decimal rounding, not method error, and it is pinned by a test so it cannot drift
@@ -156,7 +166,10 @@ this repository cannot tolerate. Every convention now has a test asserting exact
 drawn from the same id range as the churning one, so raising churn also swapped which
 SKUs went dormant and the resulting curve was not monotonic in anything. Pinning the
 dormant set to the top of the id range made the levels nested. The experiment now shows
-the unattributable share rising to 50% of the change at 40% catalogue churn.
+the unattributable share peaking at 50% of the change at 40% catalogue churn. The curve is
+not monotonic and should not be read as a trend: at the highest churn level tested the
+share falls back again, because what matters is how much volume the excluded SKUs carry
+rather than how many of them there are.
 
 **Three guards that could never fire.** Coverage, not review, found that
 `split_populations` already admits only SKUs with positive demand in both periods, so the
@@ -172,8 +185,10 @@ pinned by a test, rather than silenced with a pragma.
 <img src="docs/img/console-attribute.svg" alt="Console output of the attribute command showing the four convention table, the unattributable remainder, the bootstrap interval and the verdict" width="980">
 
 Verbatim stdout of `python -m fsvm.cli attribute`, rendered by `tools/capture_evidence.py`,
-which runs the command and writes what it printed. Every figure visible there is one the
-number checker also verifies against this README.
+which runs the command and writes what it printed. These SVGs are regenerated and checked
+for drift in CI, so they cannot go stale while the numbers move; not every value visible in
+them is separately anchored in this README, and the ones that are not are guarded by that
+drift check rather than by the number checker.
 [`docs/evidence-manifest.json`](docs/evidence-manifest.json) lists each captured command
 with its exit code.
 
@@ -207,7 +222,7 @@ cases are deliberate:
   data, because no real dataset carries a labelled true split. ADR-005 states which
   claims survive the fixture and which one genuinely needs real data.
 - **An absolute beat rate that transfers.** 46% is a property of this generator's
-  constructed forecast. The 28 point gap between the two ways of counting is a property
+  constructed forecast. The two ways of counting are 28 points apart, which is a property
   of skewed volume, which every real portfolio has.
 - **Causes.** The tool says how much of a change was mix. It does not say why the mix
   moved, and a mix shift caused by a deliberate rationalisation is a different
@@ -255,11 +270,17 @@ impossible without parsing stderr.
 | `make receipts` | re-measure every published figure, then check this README against it |
 | `make verify` | lint, test, receipts |
 
-`tools/check_numbers.py` matches **anchor phrases** rather than bare digits, because a
-digit search passes while the sentence around it has gone stale: "10 SKUs" is still found
-in a document that now says "10 weeks". It also reports, without failing, any number in
-this README that corresponds to no measured metric, since that is a number nothing
-re-measures.
+`tools/check_numbers.py` works in both directions, and the second direction is the one
+that matters. Forward, every anchored figure must appear inside its **anchor phrase**
+rather than as a bare digit, because a digit search still matches a sentence whose wording
+has gone stale around the number. Reverse, any number in this README or the defense guide
+that matches no measured metric **fails the build**, which is what catches a corrupted
+figure sitting in a table cell where no phrase could guard it. The convention table is
+generated and checked by block equality, since twelve cells cannot be guarded by phrases.
+
+The first version of this checker passed fourteen of sixteen deliberately corrupted
+figures. `tests/test_check_numbers.py` now corrupts every published figure in turn and
+asserts the checker goes red, so the claim in this section is itself tested.
 
 ## Tech stack
 
@@ -268,7 +289,7 @@ re-measures.
 | Python 3.11+ | everything | `zip(strict=True)` catches length mismatches that would otherwise truncate a weights array silently |
 | numpy | the decomposition arithmetic | the effects are dot products of weight and error vectors, which is what the convention table is literally made of |
 | pandas | panel reshaping and the population split | `pivot_table` across two periods is the operation that defines the four populations |
-| pytest | 167 tests | parametrising over four conventions is how exactness is pinned without four copies of each test |
+| pytest | 221 tests | parametrising over four conventions is how exactness is pinned without four copies of each test |
 | ruff | lint and format | one tool, so a contributor cannot pass lint and fail format |
 | GitHub Actions | re-measurement | the numbers in this README are only trustworthy if something recomputes them without being asked |
 
